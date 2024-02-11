@@ -5,6 +5,7 @@ require 'json'
 require 'fileutils'
 require 'tmpdir'
 require_relative '../commands/const'
+require_relative '../commands/download'
 require_relative '../commands/help'
 require_relative '../commands/list'
 require_relative '../lib/docopt'
@@ -12,7 +13,6 @@ require_relative '../lib/color'
 require_relative '../lib/const'
 require_relative '../lib/util'
 require_relative '../lib/convert_size'
-require_relative '../lib/downloader'
 require_relative '../lib/deb_utils'
 require_relative '../lib/package'
 
@@ -681,7 +681,7 @@ def download
   return { source:, filename: }
 end
 
-def unpack(meta)
+def unpack(meta, extract_dir)
   target_dir = nil
   Dir.chdir CREW_BREW_DIR do
     FileUtils.mkdir_p @extract_dir, verbose: @fileutils_verbose
@@ -1874,7 +1874,7 @@ def download_command(args)
     search @pkg_name
     @pkg.build_from_source = true if @opt_source
     print_current_package @opt_verbose
-    download
+    Command::download(name, @opt_source, @opt_verbose)
   end
 end
 
