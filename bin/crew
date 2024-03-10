@@ -214,7 +214,7 @@ def set_package(pkg_name, pkg_path)
     warn "#{e.class}: #{e.message}".red
   end
 
-  @pkg.build_from_source = true if @opt_recursive
+  @pkg.build_from_source = true if @opt_source || @opt_recursive || CREW_BUILD_FROM_SOURCE
 end
 
 def list_packages
@@ -429,7 +429,7 @@ def update
   end
 end
 
-def upgrade(*pkgs, build_from_source: false)
+def upgrade(*pkgs)
   check_update_avail = lambda do |pkg_file|
     pkg_name = File.basename(pkg_file, '.rb')
 
@@ -503,7 +503,6 @@ def upgrade(*pkgs, build_from_source: false)
   to_be_upgraded.each do |pkg_name|
     search(pkg_name)
     print_current_package
-    @pkg.build_from_source = (build_from_source || CREW_BUILD_FROM_SOURCE)
 
     puts "Updating #{@pkg.name}..." if @opt_verbose
 
@@ -1872,7 +1871,6 @@ def download_command(args)
   args['<name>'].each do |name|
     @pkg_name = name
     search @pkg_name
-    @pkg.build_from_source = true if @opt_source
     print_current_package @opt_verbose
     Command::download(name, @opt_source, @opt_verbose)
   end
@@ -1896,7 +1894,6 @@ def install_command(args)
     @pkg_name = name
     search @pkg_name
     print_current_package true
-    @pkg.build_from_source = true if @opt_source || @opt_recursive || CREW_BUILD_FROM_SOURCE
     next unless @pkg_name
 
     if @pkg.compatible?
@@ -1933,7 +1930,6 @@ def reinstall_command(args)
     @pkg_name = name
     search @pkg_name
     print_current_package
-    @pkg.build_from_source = true if @opt_source || @opt_recursive || CREW_BUILD_FROM_SOURCE
     next unless @pkg_name
 
     if @pkg.compatible?
@@ -2032,7 +2028,7 @@ def update_command(args)
   end
 end
 
-def upgrade_command(args) = upgrade(*args['<name>'], build_from_source: @opt_source)
+def upgrade_command(args) = upgrade(*args['<name>'])
 
 def upload_command(args)
   upload if args['<name>'].empty?
