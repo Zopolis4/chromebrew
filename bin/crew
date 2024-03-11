@@ -680,45 +680,43 @@ def download
   return { source:, filename: }
 end
 
-def unpack(filename, extract_dir)
+def unpack(pkg, filename, extract_dir, opt_verbose)
+  verbose = opt_verbose ? 'v' : ''
   target_dir = nil
   Dir.chdir CREW_BREW_DIR do
-    FileUtils.mkdir_p @extract_dir, verbose: @fileutils_verbose
-
     if CREW_CACHE_BUILD && File.file?("#{filename}.sha256") && Digest::SHA256.hexdigest(File.read(filename)) == File.read("#{filename}.sha256").chomp
-      @pkg.cached_build = true
+      pkg.cached_build = true
       puts "Extracting cached build directory from #{filename}".lightgreen
-      system "tar -Izstd -x#{@verbose}f #{filename} -C #{CREW_BREW_DIR}", exception: true
-      # Need to reset @extract_dir to the extracted cached build
-      # directory.
-      @extract_dir = `tar -Izstd --exclude='./*/*' -tf #{filename} | cut -d '/' -f 1 | LC_ALL=C sort -u`.chomp
+      system "tar -Izstd -x#{verbose}f #{filename} -C #{CREW_BREW_DIR}", exception: true
+      # Need to reset extract_dir to the extracted cached build directory.
+      extract_dir = `tar -Izstd --exclude='./*/*' -tf #{filename} | cut -d '/' -f 1 | LC_ALL=C sort -u`.chomp
     else
-      @pkg.cached_build = false
+      pkg.cached_build = false
       case File.basename filename
       when /\.zip$/i
         puts "Unpacking archive using 'unzip', this may take a while..."
-        system 'unzip', (@opt_verbose ? '-v' : '-qq'), '-d', @extract_dir, filename, exception: true
+        system 'unzip', (opt_verbose ? '-v' : '-qq'), '-d', extract_dir, filename, exception: true
       when /\.(tar(\.(gz|bz2|xz|lzma|lz))?|tgz|tbz|txz|tpxz)$/i
         puts "Unpacking archive using 'tar', this may take a while..."
-        system 'tar', "-x#{@verbose}f", filename, '-C', @extract_dir, exception: true
+        system 'tar', "-x#{verbose}f", filename, '-C', extract_dir, exception: true
       when /\.tar\.zst$/i
         puts "Unpacking archive using 'tar', this may take a while..."
-        system 'tar', '-Izstd', "-x#{@verbose}f", filename, '-C', @extract_dir, exception: true
+        system 'tar', '-Izstd', "-x#{verbose}f", filename, '-C', xtract_dir, exception: true
       when /\.deb$/i
         puts "Unpacking '.deb' archive, this may take a while..."
         DebUtils.extract_deb(filename, /data\..*/)
-        system 'tar', "-x#{@verbose}f", *Dir['data.*'], '-C', @extract_dir, exception: true
+        system 'tar', "-x#{verbose}f", *Dir['data.*'], '-C', extract_dir, exception: true
       when /\.AppImage$/i
         puts "Unpacking 'AppImage' archive, this may take a while..."
-        FileUtils.chmod 0o755, filename, verbose: @fileutils_verbose
-        system "../#{filename}", '--appimage-extract', chdir: @extract_dir, exception: true
+        FileUtils.chmod 0o755, filename, verbose: opt_verbose
+        system "../#{filename}", '--appimage-extract', chdir: extract_dir, exception: true
       end
     end
-    if @pkg.source?
+    if pkg.source?
       # Check the number of directories in the archive
-      entries = Dir["#{@extract_dir}/*"]
+      entries = Dir["#{extract_dir}/*"]
 
-      if entries.empty? && @opt_verbose
+      if entries.empty? && opt_verbose
         # This will happen with SKIP packages.
         puts "Empty archive: #{filename}".orange
       end
@@ -727,15 +725,17 @@ def unpack(filename, extract_dir)
                      entries.first
                    else
         # Use `extract_dir` otherwise
-                     @extract_dir
+                     extract_dir
                    end
     else
       # Use `extract_dir` for binary distribution
-      target_dir = @extract_dir
+      target_dir = extract_dir
     end
     # Remove tarball to save space.
-    FileUtils.rm_f filename, verbose: @fileutils_verbose
+    FileUtils.rm_f filename, verbose: opt_verbose
   end
+  # Set the locally passed package object back to the instance variable
+  @pkg = pkg
   return File.join(CREW_BREW_DIR, target_dir)
 end
 
@@ -1871,7 +1871,7 @@ def download_command(args)
     @pkg_name = name
     search @pkg_name
     print_current_package @opt_verbose
-    Command::download(name, @opt_source, @opt_verbose)
+    Command::download(@pkg, @opt_verbose)
   end
 end
 

@@ -8,7 +8,6 @@ class Libatasmart < Package
   compatibility 'all'
   source_url 'http://git.0pointer.net/libatasmart.git'
   git_hashtag "v#{version}"
-  git_branch 'master'
   binary_compression 'tar.zst'
 
   binary_sha256({

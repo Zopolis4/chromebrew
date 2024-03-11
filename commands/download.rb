@@ -5,17 +5,14 @@ require_relative '../lib/const'
 require_relative '../lib/package'
 
 class Command
-  def self.download(name, opt_source, opt_verbose)
-    pkg = Package.load_package(File.join(CREW_PACKAGES_PATH, "#{name}.rb"))
-    pkg.build_from_source = true if opt_source
-
+  def self.download(pkg, opt_verbose)
     abort "No precompiled binary or source is available for #{ARCH}.".lightred unless url = pkg.get_url(ARCH.to_sym)
     abort "Unable to download fake package.".lightred if pkg.is_fake?
 
     build_cachefile = File.join(CREW_CACHE_DIR, "#{pkg.name}-#{pkg.version}-build-#{ARCH}.tar.zst")
     return build_cachefile if CREW_CACHE_BUILD && File.file?(build_cachefile)
 
-    if opt_source
+    if pkg.build_from_source
       puts 'Downloading source...'
     elsif pkg.is_binary?(ARCH.to_sym)
       puts 'Precompiled binary available, downloading...'
@@ -30,26 +27,31 @@ class Command
     extract_dir = "#{pkg.name}.#{Time.now.utc.strftime('%Y%m%d%H%M%S')}.dir"
 
     Dir.chdir CREW_BREW_DIR do
+      Dir.mkdir extract_dir
       case filename
       when /\.zip$/i, /\.(tar(\.(gz|bz2|xz|lzma|lz|zst))?|tgz|tbz|tpxz|txz)$/i, /\.deb$/i, /\.AppImage$/i
         # If told to, try and find the downloaded file in the cache
         if CREW_CACHE_ENABLED
-          cachefile = find_cached_url_download(name, url, sha256sum, opt_verbose)
+          cachefile = find_cached_url_download(pkg.name, sha256sum, opt_verbose)
           return cachefile unless cachefile.empty?
         end
         # Download the file if we weren't told to/weren't able to find it in the cache
-        url_download(name, url, sha256sum, opt_verbose)
+        url_download(pkg.name, url, sha256sum, opt_verbose)
         # Cache the downloaded file if told to
         cache_downloaded_file(filename, opt_verbose) if CREW_CACHE_ENABLED
         # Return the location of the downloaded file
         return filename
-      when /^SKIP$/i
-        Dir.mkdir extract_dir
       when /\.git$/i # Source URLs which end with .git are git sources.
+        # If told to, try and find the cached git directory
+        if CREW_CACHE_ENABLED
+          cachefile = find_cached_git_download(pkg, extract_dir, opt_verbose)
+          return cachefile unless cachefile.empty?
+        end
+        # Download the git repository if we weren't told to/weren't able to find it in the cache
         git_download(name, extract_dir)
-        Download::cache_git_dir(extract_dir) if File.writable?(CREW_CACHE_DIR)
+        # Cache the git directory if told to
+        cache_git_dir(extract_dir) if File.writable?(CREW_CACHE_DIR)
       else
-        Dir.mkdir extract_dir
         downloader url, sha256sum, opt_verbose
 
         puts "#{filename}: File downloaded.".lightgreen
@@ -64,10 +66,11 @@ class Command
     puts "#{name.capitalize} archive downloaded.".lightgreen
   end
 
-  def git_download(name, extract_dir)
-    pkg = Package.load_package(File.join(CREW_PACKAGES_PATH, "#{name}.rb"))
-    Dir.mkdir extract_dir
+  def git_download(pkg, extract_dir)
     Dir.chdir extract_dir do
+      system 'git init'
+      system 'git config advice.detachedHead false'
+      system "git fetch --depth 1 #{pkg.source_url} #{pkg.git_hashtag}"
       if pkg.git_branch.to_s.empty?
         system 'git init'
         system 'git config advice.detachedHead false'
@@ -89,7 +92,7 @@ class Command
    end
   end
 
-  def find_cached_url_download(name, url, sha256sum, opt_verbose)
+  def find_cached_url_download(name, sha256sum, opt_verbose)
     puts "Looking for #{name} archive in cache".orange if opt_verbose
     # Privilege CREW_LOCAL_BUILD_DIR over CREW_CACHE_DIR.
     local_build_cachefile = File.join(CREW_LOCAL_BUILD_DIR, filename)
@@ -121,9 +124,8 @@ class Command
     end
   end
 
-  def find_cached_git_download(name, extract_dir, opt_verbose)
+  def find_cached_git_download(pkg, extract_dir, opt_verbose)
     verbose = opt_verbose ? 'v' : ''
-    pkg = Package.load_package(File.join(CREW_PACKAGES_PATH, "#{name}.rb"))
     # No git branch specified, just a git commit or tag
     if pkg.git_branch.to_s.empty?
       abort('No Git branch, commit, or tag specified!').lightred if pkg.git_hashtag.to_s.empty?
@@ -168,8 +170,7 @@ class Command
     verbose = opt_verbose ? 'v' : ''
     puts 'Caching downloaded git repo...'
     Dir.chdir extract_dir do
-      # Do not use --exclude-vcs to exclude .git
-      # because some builds will use that information.
+      # Do not use --exclude-vcs to exclude .git because some builds will use that information.
       system "tar c#{verbose} \
         $(find -mindepth 1 -maxdepth 1 -printf '%P\n') | \
         nice -n 20 #{CREW_PREFIX}/bin/zstd -c -T0 --ultra -20 - >  \
