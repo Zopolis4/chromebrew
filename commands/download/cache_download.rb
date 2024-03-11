@@ -1,5 +1,10 @@
+require 'fileutils'
+require_relative '../../lib/const'
+require_relative '../../lib/package'
+
 class Download
-  def self.url_download(name, url, sha256sum, filename, opt_verbose)
+  def self.url_download(name, url, sha256sum, opt_verbose)
+    filename = File.basename(url)
     puts "Looking for #{name} archive in cache".orange if opt_verbose
     cachefile = File.join(CREW_CACHE_DIR, filename)
     if File.file?(cachefile)
@@ -25,6 +30,7 @@ class Download
       cachefile = ''
     end
   end
+
   def self.git_download(name, extract_dir)
     pkgPath = File.join(CREW_PACKAGES_PATH, "#{name}.rb")
     pkg = Package.load_package(pkgPath, name)

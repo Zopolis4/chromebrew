@@ -680,48 +680,47 @@ def download
   return { source:, filename: }
 end
 
-def unpack(meta, extract_dir)
+def unpack(filename, extract_dir)
   target_dir = nil
   Dir.chdir CREW_BREW_DIR do
     FileUtils.mkdir_p @extract_dir, verbose: @fileutils_verbose
 
-    build_cachefile = File.join(CREW_CACHE_DIR, "#{@pkg.name}-#{@pkg.version}-build-#{@device[:architecture]}.tar.zst")
-    if CREW_CACHE_BUILD && File.file?(build_cachefile) && File.file?("#{build_cachefile}.sha256") && ( system "cd #{CREW_CACHE_DIR} && sha256sum -c #{build_cachefile}.sha256" )
+    if CREW_CACHE_BUILD && File.file?("#{filename}.sha256") && Digest::SHA256.hexdigest(File.read(filename)) == File.read("#{filename}.sha256").chomp
       @pkg.cached_build = true
-      puts "Extracting cached build directory from #{build_cachefile}".lightgreen
-      system "tar -Izstd -x#{@verbose}f #{build_cachefile} -C #{CREW_BREW_DIR}", exception: true
+      puts "Extracting cached build directory from #{filename}".lightgreen
+      system "tar -Izstd -x#{@verbose}f #{filename} -C #{CREW_BREW_DIR}", exception: true
       # Need to reset @extract_dir to the extracted cached build
       # directory.
-      @extract_dir = `tar -Izstd --exclude='./*/*' -tf #{build_cachefile} | cut -d '/' -f 1 | LC_ALL=C sort -u`.chomp
+      @extract_dir = `tar -Izstd --exclude='./*/*' -tf #{filename} | cut -d '/' -f 1 | LC_ALL=C sort -u`.chomp
     else
       @pkg.cached_build = false
-      case File.basename meta[:filename]
+      case File.basename filename
       when /\.zip$/i
         puts "Unpacking archive using 'unzip', this may take a while..."
-        system 'unzip', (@opt_verbose ? '-v' : '-qq'), '-d', @extract_dir, meta[:filename], exception: true
+        system 'unzip', (@opt_verbose ? '-v' : '-qq'), '-d', @extract_dir, filename, exception: true
       when /\.(tar(\.(gz|bz2|xz|lzma|lz))?|tgz|tbz|txz|tpxz)$/i
         puts "Unpacking archive using 'tar', this may take a while..."
-        system 'tar', "-x#{@verbose}f", meta[:filename], '-C', @extract_dir, exception: true
+        system 'tar', "-x#{@verbose}f", filename, '-C', @extract_dir, exception: true
       when /\.tar\.zst$/i
         puts "Unpacking archive using 'tar', this may take a while..."
-        system 'tar', '-Izstd', "-x#{@verbose}f", meta[:filename], '-C', @extract_dir, exception: true
+        system 'tar', '-Izstd', "-x#{@verbose}f", filename, '-C', @extract_dir, exception: true
       when /\.deb$/i
         puts "Unpacking '.deb' archive, this may take a while..."
-        DebUtils.extract_deb(meta[:filename], /data\..*/)
+        DebUtils.extract_deb(filename, /data\..*/)
         system 'tar', "-x#{@verbose}f", *Dir['data.*'], '-C', @extract_dir, exception: true
       when /\.AppImage$/i
         puts "Unpacking 'AppImage' archive, this may take a while..."
-        FileUtils.chmod 0o755, meta[:filename], verbose: @fileutils_verbose
-        system "../#{meta[:filename]}", '--appimage-extract', chdir: @extract_dir, exception: true
+        FileUtils.chmod 0o755, filename, verbose: @fileutils_verbose
+        system "../#{filename}", '--appimage-extract', chdir: @extract_dir, exception: true
       end
     end
-    if meta[:source]
+    if @pkg.source?
       # Check the number of directories in the archive
       entries = Dir["#{@extract_dir}/*"]
 
       if entries.empty? && @opt_verbose
         # This will happen with SKIP packages.
-        puts "Empty archive: #{meta[:filename]}".orange
+        puts "Empty archive: #{filename}".orange
       end
       target_dir = if entries.length == 1 && File.directory?(entries.first)
         # Use `extract_dir/dir_in_archive` if there is only one directory.
@@ -735,7 +734,7 @@ def unpack(meta, extract_dir)
       target_dir = @extract_dir
     end
     # Remove tarball to save space.
-    FileUtils.rm_f meta[:filename], verbose: @fileutils_verbose
+    FileUtils.rm_f filename, verbose: @fileutils_verbose
   end
   return File.join(CREW_BREW_DIR, target_dir)
 end
@@ -1314,7 +1313,7 @@ def install
   unless @pkg.is_fake?
     meta = download
     target_dir = unpack meta
-    if meta[:source]
+    if @pkg.source?
       # build from source and place binaries at CREW_DEST_DIR
       # CREW_DEST_DIR contains usr/local/... hierarchy
       build_and_preconfigure target_dir

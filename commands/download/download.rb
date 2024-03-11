@@ -1,8 +1,9 @@
 require_relative '../../lib/downloader'
+require_relative '../../lib/package'
 
 class Download
-  def self.url_download(name, url, sha256sum, filename, opt_verbose)
-    downloader url, sha256sum, filename, opt_verbose
+  def self.url_download(name, url, sha256sum, opt_verbose)
+    downloader url, sha256sum, opt_verbose
     puts "#{name.capitalize} archive downloaded.".lightgreen
   end
 
