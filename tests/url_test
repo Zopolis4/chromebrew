@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+
+# Add >LOCAL< lib to LOAD_PATH so that packages can be loaded
+$LOAD_PATH.unshift '../lib'
+
+require_relative '../lib/color'
+require_relative '../lib/package'
+
+tofail = 0
+
+Dir.glob('../packages/*.rb').each do |filename|
+  pkg = Package.load_package(filename)
+  next unless pkg.source_url
+  if pkg.source_url.to_s.match?(/\.git$/i) && !pkg.git_hashtag
+    tofail +=1
+    puts "#{pkg.name} has a git source url but is missing a git_hashtag.".lightred
+  end
+end
+
+if tofail.positive?
+  puts "\n#{tofail} failing packages."
+  exit(1) if tofail.positive?
+else
+  puts "\nAll url tests successful.".lightgreen
+end
+

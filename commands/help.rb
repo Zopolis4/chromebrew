@@ -165,9 +165,6 @@ def help_prop(property)
     case property
     when 'conflicts_ok'
       puts "The 'conflicts_ok' property bypasses checks for other package file conflicts."
-    when 'git_clone_deep'
-      puts "The 'git_clone_deep' property clones the repository without a depth value."
-      puts "Applicable only when 'source_url' is a git repository."
     when 'git_fetchtags'
       puts "The 'git_fetchtags' property gets the repository tags."
       puts "Applicable only when 'source_url' is a git repository."
@@ -186,9 +183,6 @@ def help_prop(property)
       puts 'environment options or to override the default options.'
     when 'no_fhs'
       puts "The 'no_fhs' property bypasses FHS3 compliance checks."
-    when 'no_git_submodules'
-      puts "Use the 'no_git_submodules' property for repositories without git submodules."
-      puts "Applicable only when 'source_url' is a git repository."
     when 'no_links'
       puts "Use the 'no_links' property to bypass checks for duplicate links."
     when 'no_patchelf'
