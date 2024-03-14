@@ -680,18 +680,18 @@ def download
   return { source:, filename: }
 end
 
-def unpack(pkg, filename, extract_dir, opt_verbose)
+def unpack(filename, extract_dir, opt_verbose)
   verbose = opt_verbose ? 'v' : ''
   target_dir = nil
   Dir.chdir CREW_BREW_DIR do
     if CREW_CACHE_BUILD && File.file?("#{filename}.sha256") && Digest::SHA256.hexdigest(File.read(filename)) == File.read("#{filename}.sha256").chomp
-      pkg.cached_build = true
+      @pkg.cached_build = true
       puts "Extracting cached build directory from #{filename}".lightgreen
       system "tar -Izstd -x#{verbose}f #{filename} -C #{CREW_BREW_DIR}", exception: true
       # Need to reset extract_dir to the extracted cached build directory.
       extract_dir = `tar -Izstd --exclude='./*/*' -tf #{filename} | cut -d '/' -f 1 | LC_ALL=C sort -u`.chomp
     else
-      pkg.cached_build = false
+      @pkg.cached_build = false
       case File.basename filename
       when /\.zip$/i
         puts "Unpacking archive using 'unzip', this may take a while..."
@@ -712,7 +712,7 @@ def unpack(pkg, filename, extract_dir, opt_verbose)
         system "../#{filename}", '--appimage-extract', chdir: extract_dir, exception: true
       end
     end
-    if pkg.source?
+    if @pkg.source?
       # Check the number of directories in the archive
       entries = Dir["#{extract_dir}/*"]
 
@@ -734,8 +734,6 @@ def unpack(pkg, filename, extract_dir, opt_verbose)
     # Remove tarball to save space.
     FileUtils.rm_f filename, verbose: opt_verbose
   end
-  # Set the locally passed package object back to the instance variable
-  @pkg = pkg
   return File.join(CREW_BREW_DIR, target_dir)
 end
 
@@ -1311,8 +1309,8 @@ def install
   end
 
   unless @pkg.is_fake?
-    meta = download
-    target_dir = unpack meta
+    filename, extract_dir = download @pkg, @verbose
+    target_dir = unpack @pkg, filename, extract_dir, @opt_verbose
     if @pkg.source?
       # build from source and place binaries at CREW_DEST_DIR
       # CREW_DEST_DIR contains usr/local/... hierarchy
@@ -1395,9 +1393,9 @@ def resolve_dependencies_and_build
 end
 
 def build_package(crew_archive_dest)
-  # download source codes and unpack it
-  meta = download
-  target_dir = unpack meta
+  # Download and unpack the source
+  filename, extract_dir = download
+  target_dir = unpack @pkg, filename, extract_dir, @opt_verbose
 
   # build from source and place binaries at CREW_DEST_DIR
   build_and_preconfigure target_dir
