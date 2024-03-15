@@ -128,7 +128,8 @@ String.use_color = args['--color'] || !args['--no-color']
 
 # Verbose options
 @fileutils_verbose = @opt_verbose
-@verbose           = @opt_verbose ? 'v' : ''
+@verbose = 'v' if @opt_verbose
+# @verbose           = @opt_verbose ? 'v' : ''
 @short_verbose     = @opt_verbose ? '-v' : ''
 
 class ExitMessage
