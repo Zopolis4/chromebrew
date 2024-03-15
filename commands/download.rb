@@ -2,6 +2,7 @@ require 'digest/sha2'
 require 'fileutils'
 require_relative '../lib/color'
 require_relative '../lib/const'
+require_relative '../lib/downloader'
 require_relative '../lib/package'
 
 class Command
