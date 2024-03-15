@@ -712,7 +712,7 @@ def unpack(filename, extract_dir)
         system "../#{filename}", '--appimage-extract', chdir: extract_dir, exception: true
       end
     end
-    if @pkg.source?(ARCH.to_sym)
+    if @pkg.source?(ARCH)
       # Check the number of directories in the archive
       entries = Dir["#{extract_dir}/*"]
 
@@ -1313,7 +1313,7 @@ def install
   unless @pkg.is_fake?
     filename, extract_dir = Command.download(@pkg, @verbose)
     target_dir = unpack filename, extract_dir
-    if @pkg.source?
+    if @pkg.source?(ARCH)
       # build from source and place binaries at CREW_DEST_DIR
       # CREW_DEST_DIR contains usr/local/... hierarchy
       build_and_preconfigure target_dir
