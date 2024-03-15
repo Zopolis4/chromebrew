@@ -1310,7 +1310,7 @@ def install
   end
 
   unless @pkg.is_fake?
-    filename, extract_dir = Command.download(@pkg, verbose = @verbose.empty?)
+    filename, extract_dir = Command.download(@pkg, verbose = !@verbose.empty?)
     target_dir = unpack filename, extract_dir
     if @pkg.source?
       # build from source and place binaries at CREW_DEST_DIR
@@ -1395,7 +1395,7 @@ end
 
 def build_package(crew_archive_dest)
   # Download and unpack the source
-  filename, extract_dir = Command.download(@pkg, verbose = @verbose.empty?)
+  filename, extract_dir = Command.download(@pkg, verbose = !@verbose.empty?)
   target_dir = unpack filename, extract_dir
 
   # build from source and place binaries at CREW_DEST_DIR
@@ -1871,7 +1871,7 @@ def download_command(args)
     search @pkg_name
     print_current_package @opt_verbose
     puts "ok its empty" if @verbose.empty?
-    Command.download(@pkg, verbose = @verbose.empty?)
+    Command.download(@pkg, verbose = !@verbose.empty?)
   end
 end
 
