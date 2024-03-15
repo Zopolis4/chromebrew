@@ -734,6 +734,8 @@ def unpack(filename, extract_dir, opt_verbose)
     # Remove tarball to save space.
     FileUtils.rm_f filename, verbose: opt_verbose
   end
+  # Setup the @extract_dir instance variable for cache_build
+  @extract_dir = extract_dir
   return File.join(CREW_BREW_DIR, target_dir)
 end
 

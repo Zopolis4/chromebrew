@@ -20,7 +20,7 @@ class Command
       puts 'Downloading source...'
     elsif pkg.is_binary?(ARCH.to_sym)
       puts 'Precompiled binary available, downloading...'
-    elsif url.casecmp?('SKIP')
+    elsif url == 'SKIP'
       puts 'Skipping source download...'
     else
       puts 'No precompiled binary available for your platform, downloading source...'
