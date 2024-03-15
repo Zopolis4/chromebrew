@@ -1871,6 +1871,7 @@ def download_command(args)
     @pkg_name = name
     search @pkg_name
     print_current_package @opt_verbose
+    puts "ok is it true" if @verbose
     Command.download(@pkg, @verbose)
   end
 end
