@@ -128,8 +128,7 @@ String.use_color = args['--color'] || !args['--no-color']
 
 # Verbose options
 @fileutils_verbose = @opt_verbose
-@verbose = 'v' if @opt_verbose
-# @verbose           = @opt_verbose ? 'v' : ''
+@verbose           = @opt_verbose ? 'v' : ''
 @short_verbose     = @opt_verbose ? '-v' : ''
 
 class ExitMessage
@@ -1311,7 +1310,7 @@ def install
   end
 
   unless @pkg.is_fake?
-    filename, extract_dir = Command.download(@pkg, @verbose)
+    filename, extract_dir = Command.download(@pkg, @verbose.empty?)
     target_dir = unpack filename, extract_dir
     if @pkg.source?
       # build from source and place binaries at CREW_DEST_DIR
@@ -1396,7 +1395,7 @@ end
 
 def build_package(crew_archive_dest)
   # Download and unpack the source
-  filename, extract_dir = Command.download(@pkg, @verbose)
+  filename, extract_dir = Command.download(@pkg, @verbose.empty?)
   target_dir = unpack filename, extract_dir
 
   # build from source and place binaries at CREW_DEST_DIR
@@ -1871,8 +1870,8 @@ def download_command(args)
     @pkg_name = name
     search @pkg_name
     print_current_package @opt_verbose
-    puts "ok is it true" if @verbose
-    Command.download(@pkg, @verbose)
+    puts "ok its empty" if @verbose.empty?
+    Command.download(@pkg, @verbose.empty?)
   end
 end
 
