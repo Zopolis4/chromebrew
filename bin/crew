@@ -700,7 +700,7 @@ def unpack(filename, extract_dir)
         system 'tar', "-x#{@verbose}f", filename, '-C', extract_dir, exception: true
       when /\.tar\.zst$/i
         puts "Unpacking archive using 'tar', this may take a while..."
-        system 'tar', '-Izstd', "-x#{verbose}f", filename, '-C', xtract_dir, exception: true
+        system 'tar', '-Izstd', "-x#{@verbose}f", filename, '-C', xtract_dir, exception: true
       when /\.deb$/i
         puts "Unpacking '.deb' archive, this may take a while..."
         DebUtils.extract_deb(filename, /data\..*/)
