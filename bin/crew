@@ -681,14 +681,13 @@ end
 #   return { source:, filename: }
 # end
 
-def unpack(filename, extract_dir, opt_verbose)
-  verbose = opt_verbose ? 'v' : ''
+def unpack(filename, extract_dir)
   target_dir = nil
   Dir.chdir CREW_BREW_DIR do
     if CREW_CACHE_BUILD && File.file?("#{filename}.sha256") && Digest::SHA256.hexdigest(File.read(filename)) == File.read("#{filename}.sha256").chomp
       @pkg.cached_build = true
       puts "Extracting cached build directory from #{filename}".lightgreen
-      system "tar -Izstd -x#{verbose}f #{filename} -C #{CREW_BREW_DIR}", exception: true
+      system "tar -Izstd -x#{@verbose}f #{filename} -C #{CREW_BREW_DIR}", exception: true
       # Need to reset extract_dir to the extracted cached build directory.
       extract_dir = `tar -Izstd --exclude='./*/*' -tf #{filename} | cut -d '/' -f 1 | LC_ALL=C sort -u`.chomp
     else
@@ -696,17 +695,17 @@ def unpack(filename, extract_dir, opt_verbose)
       case File.basename filename
       when /\.zip$/i
         puts "Unpacking archive using 'unzip', this may take a while..."
-        system 'unzip', (opt_verbose ? '-v' : '-qq'), '-d', extract_dir, filename, exception: true
+        system 'unzip', (@opt_verbose ? '-v' : '-qq'), '-d', extract_dir, filename, exception: true
       when /\.(tar(\.(gz|bz2|xz|lzma|lz))?|tgz|tbz|txz|tpxz)$/i
         puts "Unpacking archive using 'tar', this may take a while..."
-        system 'tar', "-x#{verbose}f", filename, '-C', extract_dir, exception: true
+        system 'tar', "-x#{@verbose}f", filename, '-C', extract_dir, exception: true
       when /\.tar\.zst$/i
         puts "Unpacking archive using 'tar', this may take a while..."
         system 'tar', '-Izstd', "-x#{verbose}f", filename, '-C', xtract_dir, exception: true
       when /\.deb$/i
         puts "Unpacking '.deb' archive, this may take a while..."
         DebUtils.extract_deb(filename, /data\..*/)
-        system 'tar', "-x#{verbose}f", *Dir['data.*'], '-C', extract_dir, exception: true
+        system 'tar', "-x#{@verbose}f", *Dir['data.*'], '-C', extract_dir, exception: true
       when /\.AppImage$/i
         puts "Unpacking 'AppImage' archive, this may take a while..."
         FileUtils.chmod 0o755, filename, verbose: opt_verbose
@@ -717,7 +716,7 @@ def unpack(filename, extract_dir, opt_verbose)
       # Check the number of directories in the archive
       entries = Dir["#{extract_dir}/*"]
 
-      if entries.empty? && opt_verbose
+      if entries.empty? && @opt_verbose
         # This will happen with SKIP packages.
         puts "Empty archive: #{filename}".orange
       end
@@ -733,7 +732,7 @@ def unpack(filename, extract_dir, opt_verbose)
       target_dir = extract_dir
     end
     # Remove tarball to save space.
-    FileUtils.rm_f filename, verbose: opt_verbose
+    FileUtils.rm_f filename, verbose: @opt_verbose
   end
   # Setup the @extract_dir instance variable for cache_build
   @extract_dir = extract_dir
@@ -1313,7 +1312,7 @@ def install
 
   unless @pkg.is_fake?
     filename, extract_dir = Command.download(@pkg, @verbose)
-    target_dir = unpack @pkg, filename, extract_dir, @opt_verbose
+    target_dir = unpack filename, extract_dir
     if @pkg.source?
       # build from source and place binaries at CREW_DEST_DIR
       # CREW_DEST_DIR contains usr/local/... hierarchy
@@ -1398,7 +1397,7 @@ end
 def build_package(crew_archive_dest)
   # Download and unpack the source
   filename, extract_dir = Command.download(@pkg, @verbose)
-  target_dir = unpack @pkg, filename, extract_dir, @opt_verbose
+  target_dir = unpack filename, extract_dir
 
   # build from source and place binaries at CREW_DEST_DIR
   build_and_preconfigure target_dir
