@@ -56,7 +56,7 @@ class Command
   end
 end
 
-def url_download(name, url, sha256sum, verbose)
+def url_download(name, url, sha256sum, verbose = false)
   downloader url, sha256sum, verbose
   puts "#{name.capitalize} archive downloaded.".lightgreen
 end
