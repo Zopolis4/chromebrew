@@ -18,7 +18,7 @@ class Command
 
     if pkg.build_from_source
       puts 'Downloading source...'
-    elsif pkg.is_binary?(ARCH.to_sym)
+    elsif pkg.binary?(ARCH.to_sym)
       puts 'Precompiled binary available, downloading...'
     elsif url == 'SKIP'
       puts 'Skipping source download...'
