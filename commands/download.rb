@@ -10,7 +10,6 @@ class Command
     abort "No precompiled binary or source is available for #{ARCH}.".lightred unless url = pkg.get_url(ARCH.to_sym)
     abort "Unable to download fake package.".lightred if pkg.is_fake?
 
-    puts "#{url}"
     filename = File.basename(url)
     sha256sum = pkg.get_sha256(ARCH.to_sym)
     extract_dir = "#{pkg.name}.#{Time.now.utc.strftime('%Y%m%d%H%M%S')}.dir"

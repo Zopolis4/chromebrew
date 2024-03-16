@@ -174,7 +174,7 @@ def external_downloader(uri, verbose = false)
              verbose: verbose ? '--verbose' : '',
              retry: CREW_DOWNLOADER_RETRY,
              url: uri.to_s,
-             output: File.basename(url)
+             output: File.basename(uri.to_s)
            }), exception: true
   )
 end
