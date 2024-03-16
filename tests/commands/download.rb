@@ -3,6 +3,9 @@ require_relative '../../lib/const'
 require_relative '../../lib/package'
 require_relative '../../commands/download'
 
+# Add >LOCAL< lib to LOAD_PATH so that packages can be loaded
+$LOAD_PATH.unshift '../lib'
+
 class DownloadCommandTest < Minitest::Test
   def test_download_tar
     pkg = Package.load_package(File.join(CREW_LIB_PATH, 'tests/data/openais.rb'))
