@@ -1312,7 +1312,7 @@ def install
   unless @pkg.is_fake?
     filename, extract_dir = Command.download(@pkg, @verbose)
     target_dir = unpack filename, extract_dir
-    if @pkg.source?(ARCH)
+    if @pkg.source?(ARCH.to_sym)
       # build from source and place binaries at CREW_DEST_DIR
       # CREW_DEST_DIR contains usr/local/... hierarchy
       build_and_preconfigure target_dir
