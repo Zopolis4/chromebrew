@@ -135,7 +135,7 @@ def http_downloader(uri, verbose = false)
       progress_bar_thread = progress_bar.show # print progress bar
 
       # read file chunks from server, write it to filesystem
-      File.open(File.basename(uri), 'wb') do |io|
+      File.open(File.basename(uri.to_s), 'wb') do |io|
         response.read_body do |chunk|
           downloaded_size += chunk.size # record downloaded size, used for showing progress bar
           progress_bar.set_downloaded_size(downloaded_size, invalid_size_error: false) if file_size.positive?
@@ -161,8 +161,8 @@ def external_downloader(uri, verbose = false)
   # default curl cmdline, CREW_DOWNLOADER should be in this format also
   #   %<verbose>s: Will be substitute to "--verbose" if #{verbose} set to true, otherwise will be substitute to ""
   #      %<retry>: Will be substitute to #{CREW_DOWNLOADER_RETRY}
-  #       %<url>s: Will be substitute to #{url}
-  #    %<output>s: Will be substitute to #{File.basename(url)}
+  #       %<url>s: Will be substitute to #{uri.to_s}
+  #    %<output>s: Will be substitute to #{File.basename(uri.to_s)}
   curl_cmdline = 'curl %<verbose>s -L -# --retry %<retry>s %<url>s -o %<output>s'
 
   # use CREW_DOWNLOADER if specified, use curl by default
