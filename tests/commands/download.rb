@@ -4,7 +4,7 @@ require_relative '../../lib/package'
 require_relative '../../commands/download'
 
 # Add >LOCAL< lib to LOAD_PATH so that packages can be loaded
-$LOAD_PATH.unshift '../../lib'
+$LOAD_PATH.unshift File.join(CREW_LIB_PATH, 'lib')
 
 class DownloadCommandTest < Minitest::Test
   def test_download_tar
