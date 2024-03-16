@@ -40,8 +40,8 @@ def downloader(url, sha256sum, verbose = false)
     case uri.scheme
     when 'http', 'https'
       # use net/http if the url protocol is http(s)://
-      puts "http_downloader(#{uri}, #{verbose})" if verbose
-      http_downloader(uri, verbose)
+      puts "http_downloader(#{uri}, #{filename}, #{verbose})" if verbose
+      http_downloader(uri, filename, verbose)
     when 'file'
       # use FileUtils to copy if it is a local file (the url protocol is file://)
       if File.exist?(uri.path)
@@ -79,8 +79,7 @@ rescue StandardError => e
   external_downloader(uri, verbose)
 end
 
-def http_downloader(uri, verbose = false)
-  filename = File.basename(uri.to_s)
+def http_downloader(uri, filename, verbose = false)
   # http_downloader: Downloader based on net/http library
   ssl_error_retry = 0
 
@@ -108,7 +107,7 @@ def http_downloader(uri, verbose = false)
         redirect_uri.scheme ||= uri.scheme
         redirect_uri.host ||= uri.host
 
-        return send(__method__, redirect_uri, verbose)
+        return send(__method__, redirect_uri, filename, verbose)
       else
         abort "Download failed with error #{response.code}: #{response.msg}".lightred
       end
