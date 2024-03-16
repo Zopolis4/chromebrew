@@ -80,6 +80,7 @@ rescue StandardError => e
 end
 
 def http_downloader(uri, verbose = false)
+  filename = File.basename(uri.to_s)
   # http_downloader: Downloader based on net/http library
   ssl_error_retry = 0
 
@@ -135,7 +136,7 @@ def http_downloader(uri, verbose = false)
       progress_bar_thread = progress_bar.show # print progress bar
 
       # read file chunks from server, write it to filesystem
-      File.open(File.basename(uri.to_s), 'wb') do |io|
+      File.open(filename, 'wb') do |io|
         response.read_body do |chunk|
           downloaded_size += chunk.size # record downloaded size, used for showing progress bar
           progress_bar.set_downloaded_size(downloaded_size, invalid_size_error: false) if file_size.positive?
