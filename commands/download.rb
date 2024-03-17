@@ -8,7 +8,7 @@ require_relative '../lib/package'
 class Command
   def self.download(pkg, verbose)
     abort "No precompiled binary or source is available for #{ARCH}.".lightred unless url = pkg.get_url(ARCH.to_sym)
-    abort "Unable to download fake package.".lightred if pkg.is_fake?
+    abort 'Unable to download fake package.'.lightred if pkg.is_fake?
 
     filename = File.basename(url)
     sha256sum = pkg.get_sha256(ARCH.to_sym)
@@ -124,11 +124,11 @@ def cache_downloaded_file(filename, verbose)
   return if File.identical?(filename, File.join(CREW_CACHE_DIR, filename))
   begin
     # Hard link to cache if possible.
-    FileUtils.ln filename, CREW_CACHE_DIR, verbose: verbose
+    FileUtils.ln filename, CREW_CACHE_DIR, force: true verbose: verbose
     puts 'Archive hard linked to cache'.green if verbose
   rescue StandardError
     # Copy to cache if hard link fails.
-    FileUtils.cp filename, CREW_CACHE_DIR, verbose: verbose
+    FileUtils.cp filename, CREW_CACHE_DIR, force: true, verbose: verbose
     puts 'Archive copied to cache'.green if verbose
   end
 end
