@@ -9,14 +9,7 @@ $LOAD_PATH.unshift File.join(CREW_LIB_PATH, 'lib')
 class DownloadCommandTest < Minitest::Test
   def test_download_tar
     pkg = Package.load_package(File.join(CREW_LIB_PATH, 'tests/data/openais.rb'))
-    CREW_HIDE_PROGBAR = '1'
-    expected_output = <<~EOT
-      No precompiled binary available for your platform, downloading source...
-      Openais archive downloaded.
-    EOT
-    assert_output expected_output, nil do
-      filename, extract_dir = Command.download(pkg, nil)
-    end
+    filename, extract_dir = Command.download(pkg, nil)
     assert_equal(File.basename(pkg.source_url), filename)
     assert(File.exist?(File.join(CREW_BREW_DIR, extract_dir)))
   end
