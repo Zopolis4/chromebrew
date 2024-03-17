@@ -128,7 +128,7 @@ def cache_downloaded_file(filename, verbose)
     puts 'Archive hard linked to cache'.green if verbose
   rescue StandardError
     # Copy to cache if hard link fails.
-    FileUtils.cp filename, CREW_CACHE_DIR, force: true, verbose: verbose
+    FileUtils.cp filename, CREW_CACHE_DIR, verbose: verbose
     puts 'Archive copied to cache'.green if verbose
   end
 end
