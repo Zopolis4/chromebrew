@@ -76,9 +76,9 @@ end
 def find_cached_url_download(name, filename, sha256sum, verbose)
   puts "Looking for #{name} archive in cache".orange if verbose
   # Privilege CREW_LOCAL_BUILD_DIR over CREW_CACHE_DIR.
-  cachefile = File.join(CREW_CACHE_DIR, filename) if File.file?(cachefile)
-  cachefile = File.join(CREW_LOCAL_BUILD_DIR, filename) if File.file?(cachefile)
-  if cachefile == File.join(CREW_LOCAL_BUILD_DIR, filename)
+  cachefile = File.join(CREW_CACHE_DIR, filename) if File.file?(File.join(CREW_CACHE_DIR, filename))
+  if File.file?(File.join(CREW_LOCAL_BUILD_DIR, filename))
+    cachefile = File.join(CREW_LOCAL_BUILD_DIR, filename)
     puts "Using #{name} archive from the build cache at #{cachefile}".orange
     puts 'The checksum will not be checked against the package file.'.orange
   end
