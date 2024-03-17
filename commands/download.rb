@@ -89,13 +89,13 @@ def find_cached_url_download(name, filename, sha256sum, verbose)
       begin
         # Hard link cached file if possible.
         FileUtils.ln cachefile, CREW_BREW_DIR, force: true, verbose: verbose
-        puts 'Archive hard linked from cache'.green if verbose
+        puts 'Archive hard linked from cache.'.green if verbose
       rescue StandardError
         # Copy cached file if hard link fails.
         FileUtils.cp cachefile, CREW_BREW_DIR, verbose: verbose
-        puts 'Archive copied from cache'.green if verbose
+        puts 'Archive copied from cache.'.green if verbose
       end
-      puts 'Archive found in cache'.lightgreen
+      puts 'Archive found in cache.'.lightgreen
     else
       puts 'Cached archive checksum mismatch. 😔 Will download.'.lightred
     end
@@ -121,6 +121,7 @@ def find_cached_git_download(pkg, extract_dir, verbose)
 end
 
 def cache_downloaded_file(filename, verbose)
+  return if File.identical?(filename, File.join(CREW_CACHE_DIR, filename))
   begin
     # Hard link to cache if possible.
     FileUtils.ln filename, CREW_CACHE_DIR, verbose: verbose
