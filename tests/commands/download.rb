@@ -9,7 +9,7 @@ $LOAD_PATH.unshift File.join(CREW_LIB_PATH, 'lib')
 class DownloadCommandTest < Minitest::Test
   def test_download_tar
     pkg = Package.load_package(File.join(CREW_LIB_PATH, 'tests/data/openais.rb'))
-    ENV['CREW_HIDE_PROGBAR'] = '1'
+    CREW_HIDE_PROGBAR = '1'
     expected_output = <<~EOT
       No precompiled binary available for your platform, downloading source...
       Openais archive downloaded.
