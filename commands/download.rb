@@ -99,8 +99,10 @@ def find_cached_url_download(name, filename, sha256sum, verbose)
     else
       puts 'Cached archive checksum mismatch. 😔 Will download.'.lightred
     end
+    return cachefile
   else
     puts 'Cannot find cached archive. 😔 Will download.'.lightred
+    return filename
   end
 end
 
