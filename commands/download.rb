@@ -121,7 +121,7 @@ def find_cached_git_download(pkg, extract_dir, verbose)
 end
 
 def cache_downloaded_file(filename, verbose)
-  return if File.identical?(filename, File.join(CREW_CACHE_DIR, filename))
+  return if File.file?(File.join(CREW_CACHE_DIR, filename))
   begin
     # Hard link to cache if possible.
     FileUtils.ln filename, CREW_CACHE_DIR, force: true, verbose: verbose
