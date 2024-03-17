@@ -1,6 +1,6 @@
 require 'buildsystems/autotools'
 
-class OpenAIS < Autotools
+class Openais < Autotools
   description 'OpenAIS was an open implementation of the Application Interface Specification (AIS) provided by the Service Availability Forum (SAForum or SA).'
   homepage 'https://github.com/corosync/openais'
   version '1.1.4'
