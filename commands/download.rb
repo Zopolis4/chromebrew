@@ -124,7 +124,7 @@ def cache_downloaded_file(filename, verbose)
   return if File.identical?(filename, File.join(CREW_CACHE_DIR, filename))
   begin
     # Hard link to cache if possible.
-    FileUtils.ln filename, CREW_CACHE_DIR, force: true verbose: verbose
+    FileUtils.ln filename, CREW_CACHE_DIR, force: true, verbose: verbose
     puts 'Archive hard linked to cache'.green if verbose
   rescue StandardError
     # Copy to cache if hard link fails.
