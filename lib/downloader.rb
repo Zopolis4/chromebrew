@@ -84,7 +84,7 @@ def http_downloader(uri, filename, verbose = false)
   ssl_error_retry = 0
 
   # open http connection
-  Net::HTTP.start(uri.host, uri.port, {
+  Net::HTTP.start(uri.host, uri.port, :p_port => :ENV, {
     max_retries: CREW_DOWNLOADER_RETRY,
         use_ssl: uri.scheme.eql?('https'),
     min_version: :TLS1_2,
