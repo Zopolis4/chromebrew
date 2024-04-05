@@ -111,7 +111,7 @@ CREW_DEST_MUSL_PREFIX = File.join(CREW_DEST_DIR, CREW_MUSL_PREFIX)
 MUSL_LIBC_VERSION     = `[ -x '#{CREW_MUSL_PREFIX}/lib/libc.so' ] && #{CREW_MUSL_PREFIX}/lib/libc.so 2>&1`[/\bVersion\s+\K\S+/]
 
 CREW_DEST_HOME          = File.join(CREW_DEST_DIR, HOME)
-# echo "cache_dir ufs /home/chronos/user/.cache/squid 10000" >> squidconf
+# echo "cache_dir ufs /home/chronos/user/.cache/squid 10000 16 256" >> /usr/local/etc/squid.conf
 CREW_CACHE_DIR          = ENV.fetch('CREW_CACHE_DIR', "#{HOME}/.cache/crewcache")
 CREW_CACHE_BUILD        = ENV.fetch('CREW_CACHE_BUILD', '0').eql?('1')
 CREW_CACHE_FAILED_BUILD = ENV.fetch('CREW_CACHE_FAILED_BUILD', '0').eql?('1')
