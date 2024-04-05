@@ -83,8 +83,12 @@ def http_downloader(uri, filename, verbose = false)
   # http_downloader: Downloader based on net/http library
   ssl_error_retry = 0
 
+# dont do this btw its probably not a good idea to disable all security
+# get a good setup which means its only active in downloader.rb
+# for testing tho hit em with the
+# set -gx http_proxy "http://127.0.0.1:3128"
   # open http connection
-  Net::HTTP.start(uri.host, uri.port, :p_port => :ENV, {
+  Net::HTTP.start(uri.host, uri.port, {
     max_retries: CREW_DOWNLOADER_RETRY,
         use_ssl: uri.scheme.eql?('https'),
     min_version: :TLS1_2,
