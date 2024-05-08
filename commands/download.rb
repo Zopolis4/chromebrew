@@ -61,14 +61,239 @@ def url_download(name, url, sha256sum, verbose = false)
   puts "#{name.capitalize} archive downloaded.".lightgreen
 end
 
+# Looking at the git sources, the relevant function is `git_url_basename`, which, despite being split out into `dir.c` and made available in `dir.h` in [ed86301][1], is only used by `builtin/clone.c` and `builtin/submodule--helper.c`, so easy no way of accessing that function without calling `git clone`.
+#
+# So, taking a look at the source of `git_url_basename`:
+# ```
+# char *git_url_basename(const char *repo, int is_bundle, int is_bare)
+# {
+# 	const char *end = repo + strlen(repo), *start, *ptr;
+# 	size_t len;
+# 	char *dir;
+#
+# 	/*
+# 	 * Skip scheme.
+# 	 */
+# 	start = strstr(repo, "://");
+# 	if (!start)
+# 		start = repo;
+# 	else
+# 		start += 3;
+#
+# 	/*
+# 	 * Skip authentication data. The stripping does happen
+# 	 * greedily, such that we strip up to the last '@' inside
+# 	 * the host part.
+# 	 */
+# 	for (ptr = start; ptr < end && !is_dir_sep(*ptr); ptr++) {
+# 		if (*ptr == '@')
+# 			start = ptr + 1;
+# 	}
+#
+# 	/*
+# 	 * Strip trailing spaces, slashes and /.git
+# 	 */
+# 	while (start < end && (is_dir_sep(end[-1]) || isspace(end[-1])))
+# 		end--;
+# 	if (end - start > 5 && is_dir_sep(end[-5]) &&
+# 	    !strncmp(end - 4, ".git", 4)) {
+# 		end -= 5;
+# 		while (start < end && is_dir_sep(end[-1]))
+# 			end--;
+# 	}
+#
+# 	/*
+# 	 * It should not be possible to overflow `ptrdiff_t` by passing in an
+# 	 * insanely long URL, but GCC does not know that and will complain
+# 	 * without this check.
+# 	 */
+# 	if (end - start < 0)
+# 		die(_("No directory name could be guessed.\n"
+# 		      "Please specify a directory on the command line"));
+#
+# 	/*
+# 	 * Strip trailing port number if we've got only a
+# 	 * hostname (that is, there is no dir separator but a
+# 	 * colon). This check is required such that we do not
+# 	 * strip URI's like '/foo/bar:2222.git', which should
+# 	 * result in a dir '2222' being guessed due to backwards
+# 	 * compatibility.
+# 	 */
+# 	if (memchr(start, '/', end - start) == NULL
+# 	    && memchr(start, ':', end - start) != NULL) {
+# 		ptr = end;
+# 		while (start < ptr && isdigit(ptr[-1]) && ptr[-1] != ':')
+# 			ptr--;
+# 		if (start < ptr && ptr[-1] == ':')
+# 			end = ptr - 1;
+# 	}
+#
+# 	/*
+# 	 * Find last component. To remain backwards compatible we
+# 	 * also regard colons as path separators, such that
+# 	 * cloning a repository 'foo:bar.git' would result in a
+# 	 * directory 'bar' being guessed.
+# 	 */
+# 	ptr = end;
+# 	while (start < ptr && !is_dir_sep(ptr[-1]) && ptr[-1] != ':')
+# 		ptr--;
+# 	start = ptr;
+#
+# 	/*
+# 	 * Strip .{bundle,git}.
+# 	 */
+# 	len = end - start;
+# 	strip_suffix_mem(start, &len, is_bundle ? ".bundle" : ".git");
+#
+# 	if (!len || (len == 1 && *start == '/'))
+# 		die(_("No directory name could be guessed.\n"
+# 		      "Please specify a directory on the command line"));
+#
+# 	if (is_bare)
+# 		dir = xstrfmt("%.*s.git", (int)len, start);
+# 	else
+# 		dir = xstrndup(start, len);
+# 	/*
+# 	 * Replace sequences of 'control' characters and whitespace
+# 	 * with one ascii space, remove leading and trailing spaces.
+# 	 */
+# 	if (*dir) {
+# 		char *out = dir;
+# 		int prev_space = 1 /* strip leading whitespace */;
+# 		for (end = dir; *end; ++end) {
+# 			char ch = *end;
+# 			if ((unsigned char)ch < '\x20')
+# 				ch = '\x20';
+# 			if (isspace(ch)) {
+# 				if (prev_space)
+# 					continue;
+# 				prev_space = 1;
+# 			} else
+# 				prev_space = 0;
+# 			*out++ = ch;
+# 		}
+# 		*out = '\0';
+# 		if (out > dir && prev_space)
+# 			out[-1] = '\0';
+# 	}
+# 	return dir;
+# }
+# ```
+# So, let's re-implement this in `sed`.
+#
+# ```
+# # Skip scheme
+# sed 's/.*:\/\///'
+# # Skip authentication data
+# sed 's/[^/]*@[^/]*//'
+# ```
+#
+#
+#   [1]: https://github.com/git/git/commit/ed86301f68fcbb17c5d1c7a3258e4705b3b1da9c
+
+# #!/bin/sh
+#
+# # make sure that cloning $1 results in local directory $2
+# test_sed () {
+#   echo "$1" |
+#   # Strip scheme (ssh://, git://, https://)
+#   sed 's/.*:\/\///' |
+#   # Strip authentication data
+#   sed 's/[^/]*@//' |
+#   # Strip trailing slashes and spaces
+#   sed 's/[[:space:]/]*$//' |
+#   # Strip trailing /.git
+#   sed 's/\/\.git$//' |
+#   # Strip trailing slashes again
+#   sed 's/\/\+$//' |
+#   # If the string contains a : and does not contain a /, strip trailing digits
+#   sed -E '/.*\/.*/! { /.*:.*/ s/[0-9]*$// }' |
+#   # Strip trailing colons
+#   sed 's/:*$//' |
+#   # Find the last component of the string, treating / and : as path separators
+#   sed -E 's/.*[/:]([^/:]+)$/\1/' |
+#   # Strip trailing .bundle or .git
+#   sed 's/\.bundle$//;s/\.git$//'
+# }
+#
+# test_clone_dir () {
+#   [ "$3" = "bare" ] && return 1
+#   if [ "$(test_sed $1)" = "$2" ]; then
+#     echo "Passing on $1"
+#   else
+#     echo "Failing on $1, outputting $(test_sed $1) instead of expected $2"
+#   fi
+# }
+#
+# # basic syntax with bare and non-bare variants
+# test_clone_dir host:foo foo
+# test_clone_dir host:foo foo.git bare
+# test_clone_dir host:foo.git foo
+# test_clone_dir host:foo.git foo.git bare
+# test_clone_dir host:foo/.git foo
+# test_clone_dir host:foo/.git foo.git bare
+#
+# # similar, but using ssh URL rather than host:path syntax
+# test_clone_dir ssh://host/foo foo
+# test_clone_dir ssh://host/foo foo.git bare
+# test_clone_dir ssh://host/foo.git foo
+# test_clone_dir ssh://host/foo.git foo.git bare
+# test_clone_dir ssh://host/foo/.git foo
+# test_clone_dir ssh://host/foo/.git foo.git bare
+#
+# # we should remove trailing slashes and .git suffixes
+# test_clone_dir ssh://host/foo/ foo
+# test_clone_dir ssh://host/foo/// foo
+# test_clone_dir ssh://host/foo/.git/ foo
+# test_clone_dir ssh://host/foo.git/ foo
+# test_clone_dir ssh://host/foo.git/// foo
+# test_clone_dir ssh://host/foo///.git/ foo
+# test_clone_dir ssh://host/foo/.git/// foo
+#
+# test_clone_dir host:foo/ foo
+# test_clone_dir host:foo/// foo
+# test_clone_dir host:foo.git/ foo
+# test_clone_dir host:foo/.git/ foo
+# test_clone_dir host:foo.git/// foo
+# test_clone_dir host:foo///.git/ foo
+# test_clone_dir host:foo/.git/// foo
+#
+# # omitting the path should default to the hostname
+# test_clone_dir ssh://host/ host
+# test_clone_dir ssh://host:1234/ host
+# test_clone_dir ssh://user@host/ host
+# test_clone_dir host:/ host
+#
+# # auth materials should be redacted
+# test_clone_dir ssh://user:password@host/ host
+# test_clone_dir ssh://user:password@host:1234/ host
+# test_clone_dir ssh://user:passw@rd@host:1234/ host
+# test_clone_dir user@host:/ host
+# test_clone_dir user:password@host:/ host
+# test_clone_dir user:passw@rd@host:/ host
+#
+# # auth-like material should not be dropped
+# test_clone_dir ssh://host/foo@bar foo@bar
+# test_clone_dir ssh://host/foo@bar.git foo@bar
+# test_clone_dir ssh://user:password@host/foo@bar foo@bar
+# test_clone_dir ssh://user:passw@rd@host/foo@bar.git foo@bar
+#
+# test_clone_dir host:/foo@bar foo@bar
+# test_clone_dir host:/foo@bar.git foo@bar
+# test_clone_dir user:password@host:/foo@bar foo@bar
+# test_clone_dir user:passw@rd@host:/foo@bar.git foo@bar
+#
+# # trailing port-like numbers should not be stripped for paths
+# test_clone_dir ssh://user:password@host/test:1234 1234
+# test_clone_dir ssh://user:password@host/test:1234.git 1234
+
 def git_download(pkg, extract_dir)
   Dir.chdir extract_dir do
     system 'git init'
     system 'git config advice.detachedHead false'
-    system "git fetch --depth 1 #{pkg.source_url} #{pkg.git_hashtag}"
+    system "git fetch #{'--tags' if pkg.git_fetchtags?} --depth 1 #{pkg.source_url} #{pkg.git_hashtag}"
     system 'git checkout FETCH_HEAD'
     system 'git submodule update --init --recursive --depth 1'
-    system "git fetch --tags --depth 1 #{pkg.source_url}" if pkg.git_fetchtags?
     puts 'Repository downloaded.'.lightgreen
   end
 end
