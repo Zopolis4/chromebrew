@@ -61,6 +61,13 @@ def url_download(name, url, sha256sum, verbose = false)
   puts "#{name.capitalize} archive downloaded.".lightgreen
 end
 
+# sed 's/.* //g' .git/FETCH_HEAD | sed 's/\.git//' | xargs basename
+# git branch --track $(sed 's/.* //g' .git/FETCH_HEAD | sed 's/\.git//' | xargs basename) $(sed 's/.* //g' .git/FETCH_HEAD)/$(git ls-remote --symref $(sed 's/.* //g' .git/FETCH_HEAD) HEAD | awk 'NR==1 {print $2}' | xargs basename)
+# git branch --track local_branch remote_url/remote_branch
+# git ls-remote --symref $(sed 's/.* //g' .git/FETCH_HEAD) HEAD | awk 'NR==1 {print $2}' | xargs basename
+#
+
+
 # Looking at the git sources, the relevant function is `git_url_basename`, which, despite being split out into `dir.c` and made available in `dir.h` in [ed86301][1], is only used by `builtin/clone.c` and `builtin/submodule--helper.c`, so easy no way of accessing that function without calling `git clone`.
 #
 # So, taking a look at the source of `git_url_basename`:
