@@ -61,11 +61,46 @@ def url_download(name, url, sha256sum, verbose = false)
   puts "#{name.capitalize} archive downloaded.".lightgreen
 end
 
+cd $HOME
+mkdir -p .cache/git
+cd .cache/git
+git init --bare
+git config --local receive.shallowUpdate true
+export GIT_ALTERNATE_OBJECT_DIRECTORIES=$HOME/.cache/git/objects
+mkdir -p $CREW_PREFIX/etc/git_cache/hooks
+git config -f $CREW_PREFIX/etc/git_cache/config core.hooksPath $CREW_PREFIX/etc/git_cache/hooks
+git config --global includeIf.gitdir:$CREW_PREFIX/tmp/.path $CREW_PREFIX/etc/git_cache/config
+echo 'git push ~/.cache/git HEAD:refs/heads/$(sed '\''s/.* //g'\'' .git/FETCH_HEAD | sed '\''s/\.git//'\'' | xargs basename)'  > $CREW_PREFIX/etc/git_cache/hooks/post-checkout
+chmod +x $CREW_PREFIX/etc/git_cache/hooks/post-checkout
+
+# REAL PLAN
+# initialise the cache repo
+# cd $HOME
+# mkdir -p .cache/git
+# cd .cache/git
+# git init --bare
+# git config --local receive.shallowUpdate true
+# export GIT_ALTERNATE_OBJECT_DIRECTORIES=$HOME/.cache/git/objects
+# create the configuration setup
+# mkdir -p $CREW_PREFIX/etc/git_cache/hooks
+# git config -f $CREW_PREFIX/etc/git_cache/config core.hooksPath $CREW_PREFIX/etc/git_cache/hooks
+# git config --global includeIf.gitdir:$CREW_PREFIX/tmp/.path $CREW_PREFIX/etc/git_cache/config
+
+# now we gotta create the actual hook
+# echo 'git push ~/.cache/git HEAD:refs/heads/$(sed '\''s/.* //g'\'' FETCH_HEAD | sed '\''s/\.git//'\'' | xargs basename)'  > $CREW_PREFIX/etc/git_cache/hooks/post-checkout
+# chmod +x $CREW_PREFIX/etc/git_cache/hooks/post-checkout
+
 # sed 's/.* //g' .git/FETCH_HEAD | sed 's/\.git//' | xargs basename
-# git branch --track $(sed 's/.* //g' .git/FETCH_HEAD | sed 's/\.git//' | xargs basename) $(sed 's/.* //g' .git/FETCH_HEAD)/$(git ls-remote --symref $(sed 's/.* //g' .git/FETCH_HEAD) HEAD | awk 'NR==1 {print $2}' | xargs basename)
+# git branch --track $(sed 's/.* //g' .git/FETCH_HEAD | sed 's/\.git//' | xargs basename) $(sed 's/.* //g' .git/FETCH_HEAD)/$(git remote show $(sed 's/.* //g' .git/FETCH_HEAD) | awk 'NR==4 {print $3}')
 # git branch --track local_branch remote_url/remote_branch
 # git ls-remote --symref $(sed 's/.* //g' .git/FETCH_HEAD) HEAD | awk 'NR==1 {print $2}' | xargs basename
+# git remote show $(sed 's/.* //g' .git/FETCH_HEAD) | awk 'NR==4 {print $3}'
 #
+
+# new plan
+# do this in the cache repo (git config --local receive.shallowUpdate true)
+# git push ~/.cache/git HEAD:refs/heads/$(sed 's/.* //g' .git/FETCH_HEAD | sed 's/\.git//' | xargs basename)
+
 
 
 # Looking at the git sources, the relevant function is `git_url_basename`, which, despite being split out into `dir.c` and made available in `dir.h` in [ed86301][1], is only used by `builtin/clone.c` and `builtin/submodule--helper.c`, so easy no way of accessing that function without calling `git clone`.
