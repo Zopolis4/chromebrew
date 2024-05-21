@@ -65,14 +65,22 @@ cd $HOME
 mkdir -p .cache/git
 cd .cache/git
 git init --bare
-git config --local receive.shallowUpdate true
 export GIT_ALTERNATE_OBJECT_DIRECTORIES=$HOME/.cache/git/objects
 mkdir -p $CREW_PREFIX/etc/git_cache/hooks
 git config -f $CREW_PREFIX/etc/git_cache/config core.hooksPath $CREW_PREFIX/etc/git_cache/hooks
 git config --global includeIf.gitdir:$CREW_PREFIX/tmp/.path $CREW_PREFIX/etc/git_cache/config
-echo 'git push ~/.cache/git HEAD:refs/heads/$(sed '\''s/.* //g'\'' .git/FETCH_HEAD | sed '\''s/\.git//'\'' | xargs basename)'  > $CREW_PREFIX/etc/git_cache/hooks/post-checkout
+tee $CREW_PREFIX/etc/git_cache/hooks/post-checkout <<'EOF'
+name=$(sed 's/.* //g' .git/FETCH_HEAD | sed 's/\.git//' | xargs basename)
+branch=$(git remote show $(sed 's/.* //g' .git/FETCH_HEAD) | awk 'NR==4 {print $3}')
+url=$(sed 's/.* //g' .git/FETCH_HEAD)
+git -C ~/.cache/git remote add -t $branch $name $url
+GIT_ALTERNATE_OBJECT_DIRECTORIES=$PWD/.git/objects git -C ~/.cache/git fetch --depth 1
+EOF
 chmod +x $CREW_PREFIX/etc/git_cache/hooks/post-checkout
 
+
+echo 'git push ~/.cache/git HEAD:refs/heads/$(sed '\''s/.* //g'\'' .git/FETCH_HEAD | sed '\''s/\.git//'\'' | xargs basename)'  > $CREW_PREFIX/etc/git_cache/hooks/post-checkout
+git config --local receive.shallowUpdate true
 # REAL PLAN
 # initialise the cache repo
 # cd $HOME
