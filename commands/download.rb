@@ -74,7 +74,7 @@ name=$(sed 's/.* //g' .git/FETCH_HEAD | sed 's/\.git//' | xargs basename)
 branch=$(git remote show $(sed 's/.* //g' .git/FETCH_HEAD) | awk 'NR==4 {print $3}')
 url=$(sed 's/.* //g' .git/FETCH_HEAD)
 git -C ~/.cache/git remote add -t $branch $name $url
-GIT_ALTERNATE_OBJECT_DIRECTORIES=$PWD/.git/objects git -C ~/.cache/git fetch --depth 1
+GIT_ALTERNATE_OBJECT_DIRECTORIES=$PWD/.git/objects git -C ~/.cache/git fetch --update-shallow --depth 1
 EOF
 chmod +x $CREW_PREFIX/etc/git_cache/hooks/post-checkout
 
