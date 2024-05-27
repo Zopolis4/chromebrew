@@ -1,17 +1,17 @@
-require 'package'
+require 'buildsystems/autotools'
 
-class Wine < Package
+class Wine < Autotools
   description 'Wine (originally an acronym for "Wine Is Not an Emulator") is a compatibility layer capable of running Microsoft Windows applications.'
-  homepage 'https://www.winehq.org/'
-  version '9.0'
+  homepage 'https://www.winehq.org'
+  version '9.11'
   license 'LGPL-2.1'
   compatibility 'x86_64'
-  source_url 'https://dl.winehq.org/wine/source/9.0/wine-9.0.tar.xz'
-  source_sha256 '7cfd090a5395f5b76d95bb5defac8a312c8de4c070c1163b8b58da38330ca6ee'
+  source_url 'https://dl.winehq.org/wine/source/9.x/wine-9.11.tar.xz'
+  source_sha256 'dfa00c264ea71169d02a849a833e48cae761fb08422a00df8644ebd67bf87240'
   binary_compression 'tar.zst'
 
   binary_sha256({
-     x86_64: '1ea5bc2c10eb8e696feac04e6f238470831743a5d744bf7a5ca53152a4f1fcfc'
+     x86_64: 'c33e922c4d4b7d38241edf1c879a4d0def98a1e80cd19d7ab3dd91d2b616461a'
   })
 
   depends_on 'alsa_lib' # R
@@ -39,6 +39,7 @@ class Wine < Package
   depends_on 'libxi' => :build
   depends_on 'libxkbcommon' # R
   depends_on 'libxrandr' => :build
+  depends_on 'llvm18_dev' => :build
   depends_on 'mesa' => :build
   depends_on 'mpg123' => :build
   depends_on 'openal' => :build
@@ -50,66 +51,28 @@ class Wine < Package
   depends_on 'vkd3d' => :build
   depends_on 'wayland' # R
   depends_on 'xdg_base' => :build
+  depends_on 'glibc_lib' # R
+  depends_on 'unixodbc' # R
 
+  # Wine does not build with LTO: https://bugs.winehq.org/show_bug.cgi?id=41712
   no_lto
-  print_source_bashrc
 
-  def self.build
-    FileUtils.mkdir_p 'wine64-build'
-    Dir.chdir 'wine64-build' do
-      unless File.file?('Makefile')
-        system "../configure #{CREW_OPTIONS} \
-          --enable-win64 \
-          --disable-maintainer-mode \
-          --with-gstreamer \
-          --with-x"
-      end
-      system 'make || make'
-      File.write 'wine_config_env', <<~WINE_CONFIG_EOF
-        # Wine configuration
-        WINEPREFIX="${XDG_CONFIG_HOME}"/.wine
-      WINE_CONFIG_EOF
-    end
-  end
-
-  def self.check
-    # There are all sorts of fixme errors, but wine does successfully
-    # prompt for install of the wine-mono package, which it then claims
-    # to install during the test process...
-    Dir.chdir 'wine64-build' do
-      system 'make test || true'
-    end
-  end
-
-  def self.install
-    FileUtils.mkdir_p "#{CREW_DEST_PREFIX}/bin"
-    Dir.chdir "#{CREW_DEST_PREFIX}/bin" do
-      FileUtils.ln_s 'wine64', 'wine'
-    end
-    Dir.chdir 'wine64-build' do
-      system 'make', "DESTDIR=#{CREW_DEST_DIR}", "DLLDIR=#{CREW_DEST_WINE_PREFIX}", 'install'
-      FileUtils.install 'wine_config_env', "#{CREW_DEST_PREFIX}/etc/env.d/wine", mode: 0o644
-    end
-  end
+  configure_options '--enable-archs=i386,x86_64 --disable-tests'
 
   def self.postinstall
     ExitMessage.add 'To run an application with wine, type `wine path/to/myexecutable.exe` or `wine path/to/myinstaller.msi`.'.lightblue
   end
 
   def self.remove
-    @xdg_config_home = ENV.fetch('XDG_CONFIG_HOME', nil)
-    @xdg_config_home = "#{CREW_PREFIX}/.config" if @xdg_config_home.to_s.empty?
-    config_dirs = ["#{HOME}/.wine", "#{@xdg_config_home}/.wine"]
-    config_dirs.each do |config_dir|
-      next unless Dir.exist? config_dir
-
-      print "\nWould you like to remove #{config_dir}? [y/N] "
+    config_dir = "#{HOME}/.wine"
+    if Dir.exist? config_dir
+      print "Would you like to remove the #{config_dir} directory? [y/N] "
       case $stdin.gets.chomp.downcase
       when 'y', 'yes'
         FileUtils.rm_rf config_dir
         puts "#{config_dir} removed.".lightgreen
       else
-        puts "#{config_dir} saved.".lightblue
+        puts "#{config_dir} saved.".lightgreen
       end
     end
   end
