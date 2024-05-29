@@ -1,3 +1,5 @@
+# https://github.com/r7kamura/sevencop/blob/main/lib/rubocop/cop/sevencop/hash_element_ordered.rb
+
 module RuboCop
   module Cop
     module Chromebrew
