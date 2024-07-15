@@ -2,7 +2,7 @@
 # Defines common constants used in different parts of crew
 require 'etc'
 
-CREW_VERSION = '1.51.1'
+CREW_VERSION = '1.51.2'
 
 # Kernel architecture.
 KERN_ARCH = Etc.uname[:machine]
@@ -82,9 +82,8 @@ CREW_LOCAL_BUILD_DIR = "#{CREW_LOCAL_REPO_ROOT}/release/#{ARCH}"
 CREW_CONST_GIT_COMMIT = `git -C #{CREW_LIB_PATH} log -n1 --oneline #{__FILE__} 2> /dev/null`.split.first
 
 # Put musl build dir under CREW_PREFIX/share/musl to avoid FHS incompatibility
-CREW_MUSL_PREFIX      = File.join(CREW_PREFIX, '/share/musl/')
+CREW_MUSL_PREFIX      = File.join(CREW_PREFIX, '/share/musl')
 CREW_DEST_MUSL_PREFIX = File.join(CREW_DEST_DIR, CREW_MUSL_PREFIX)
-MUSL_LIBC_VERSION     = File.executable?("#{CREW_MUSL_PREFIX}/lib/libc.so") ? `#{CREW_MUSL_PREFIX}/lib/libc.so 2>&1`[/\bVersion\s+\K\S+/] : nil
 
 CREW_DEST_HOME          = File.join(CREW_DEST_DIR, HOME)
 CREW_CACHE_DIR          = ENV.fetch('CREW_CACHE_DIR', "#{HOME}/.cache/crewcache")
@@ -98,9 +97,9 @@ CREW_VERBOSE = ARGV.intersect?(%w[-v --verbose])
 # Set CREW_NPROC from environment variable, `distcc -j`, or `nproc`.
 CREW_NPROC = \
   if File.file?("#{CREW_PREFIX}/bin/distcc")
-    ENV.fetch('CREW_NPROC', `distcc -j`.chomp)
+    ENV.fetch('CREW_NPROC', `distcc -j`.chomp).to_i
   else
-    ENV.fetch('CREW_NPROC', `nproc`.chomp)
+    ENV.fetch('CREW_NPROC', `nproc`.chomp).to_i
   end
 
 # Set following as boolean if environment variables exist.
@@ -190,19 +189,14 @@ CREW_COMMON_FNO_LTO_FLAGS = "#{CREW_CORE_FLAGS} -fno-lto"
 CREW_LDFLAGS              = "-flto=auto #{CREW_LINKER_FLAGS}"
 CREW_FNO_LTO_LDFLAGS      = '-fno-lto'
 
-CREW_ENV_OPTIONS_HASH = \
-  if CREW_DISABLE_ENV_OPTIONS
-    { 'CREW_DISABLE_ENV_OPTIONS' => '1' }
-  else
-    {
-      'CFLAGS'          => CREW_COMMON_FLAGS,
-      'CXXFLAGS'        => CREW_COMMON_FLAGS,
-      'FCFLAGS'         => CREW_COMMON_FLAGS,
-      'FFLAGS'          => CREW_COMMON_FLAGS,
-      'LD_LIBRARY_PATH' => CREW_LIB_PREFIX,
-      'LDFLAGS'         => CREW_LDFLAGS
-    }
-  end
+CREW_ENV_OPTIONS_HASH = {
+  'CFLAGS'          => CREW_COMMON_FLAGS,
+  'CXXFLAGS'        => CREW_COMMON_FLAGS,
+  'FCFLAGS'         => CREW_COMMON_FLAGS,
+  'FFLAGS'          => CREW_COMMON_FLAGS,
+  'LD_LIBRARY_PATH' => CREW_LIB_PREFIX,
+  'LDFLAGS'         => CREW_LDFLAGS
+}
 
 # parse from hash to shell readable string
 CREW_ENV_OPTIONS = CREW_ENV_OPTIONS_HASH.map { |k, v| "#{k}=\"#{v}\"" }.join(' ')
@@ -236,9 +230,7 @@ CREW_MESON_OPTIONS = <<~OPT.chomp
   -Dbuildtype=release \
   -Db_lto=true \
   -Dstrip=true \
-  -Db_pie=true \
-  -Dcpp_args='#{CREW_CORE_FLAGS}' \
-  -Dc_args='#{CREW_CORE_FLAGS}'
+  -Db_pie=true
 OPT
 
 # Use ninja or samurai
@@ -251,15 +243,10 @@ CREW_NINJA = ENV.fetch('CREW_NINJA', 'ninja')
 CREW_CMAKE_OPTIONS = <<~OPT.chomp
   -DCMAKE_INSTALL_PREFIX=#{CREW_PREFIX} \
   -DCMAKE_LIBRARY_PATH=#{CREW_LIB_PREFIX} \
-  -DCMAKE_C_FLAGS='#{CREW_COMMON_FLAGS.gsub(/-fuse-ld=.{2,4}\s/, '')}' \
-  -DCMAKE_CXX_FLAGS='#{CREW_COMMON_FLAGS.gsub(/-fuse-ld=.{2,4}\s/, '')}' \
-  -DCMAKE_EXE_LINKER_FLAGS='#{CREW_LDFLAGS}' \
-  -DCMAKE_LINKER_TYPE=#{CREW_LINKER.upcase} \
-  -DCMAKE_SHARED_LINKER_FLAGS='#{CREW_LDFLAGS}' \
-  -DCMAKE_MODULE_LINKER_FLAGS='#{CREW_LDFLAGS}' \
   -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE \
   -DCMAKE_BUILD_TYPE=Release
 OPT
+
 CREW_CMAKE_FNO_LTO_OPTIONS = <<~OPT.chomp
   -DCMAKE_INSTALL_PREFIX=#{CREW_PREFIX} \
   -DCMAKE_LIBRARY_PATH=#{CREW_LIB_PREFIX} \

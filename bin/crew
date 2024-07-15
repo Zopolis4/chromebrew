@@ -662,12 +662,7 @@ end
 
 def build_and_preconfigure(target_dir)
   Dir.chdir target_dir do
-    unless @pkg.no_compile_needed?
-      puts 'Building from source, this may take a while...'
-
-      # Load musl options only if package is targeted at the musl toolchain
-      load File.join(CREW_LIB_PATH, 'lib/musl.rb').to_s if @pkg.is_musl?
-    end
+    puts 'Building from source, this may take a while...' unless @pkg.no_compile_needed?
 
     build_start_time = Time.now.to_i
 

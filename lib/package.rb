@@ -3,6 +3,7 @@ require 'json'
 require_relative 'const'
 require_relative 'color'
 require_relative 'package_helpers'
+require_relative 'musl'
 require_relative 'selector'
 
 def require_gem(gem_name_and_require = nil, require_override = nil)
@@ -332,10 +333,12 @@ class Package
   def self.source?(architecture) = !(binary?(architecture) || is_fake?)
 
   def self.system(*args, **opt_args)
-    @crew_env_options_hash = if no_env_options?
+    @crew_env_options_hash = if no_env_options? || CREW_DISABLE_ENV_OPTIONS
                                { 'CREW_DISABLE_ENV_OPTIONS' => '1' }
                              elsif no_lto?
                                CREW_ENV_FNO_LTO_OPTIONS_HASH
+                             elsif is_musl?
+                               CREW_MUSL_ENV_OPTIONS_HASH
                              else
                                CREW_ENV_OPTIONS_HASH
                              end
