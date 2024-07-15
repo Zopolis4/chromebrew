@@ -2,6 +2,7 @@ require 'English'
 require_relative 'const'
 require_relative 'color'
 require_relative 'package_helpers'
+require_relative 'musl'
 require_relative 'selector'
 
 class Package
@@ -196,6 +197,8 @@ class Package
                                { 'CREW_DISABLE_ENV_OPTIONS' => '1' }
                              elsif no_lto?
                                CREW_ENV_FNO_LTO_OPTIONS_HASH
+                             elsif is_musl?
+                               CREW_MUSL_ENV_OPTIONS_HASH
                              else
                                CREW_ENV_OPTIONS_HASH
                              end

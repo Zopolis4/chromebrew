@@ -2,7 +2,7 @@
 # Defines common constants used in different parts of crew
 require 'etc'
 
-CREW_VERSION = '1.49.9'
+CREW_VERSION = '1.50.0'
 
 # Kernel architecture.
 KERN_ARCH = Etc.uname[:machine]
@@ -82,7 +82,7 @@ CREW_LOCAL_BUILD_DIR = "#{CREW_LOCAL_REPO_ROOT}/release/#{ARCH}"
 CREW_CONST_GIT_COMMIT = `git -C #{CREW_LIB_PATH} log -n1 --oneline #{__FILE__}`.split.first
 
 # Put musl build dir under CREW_PREFIX/share/musl to avoid FHS incompatibility
-CREW_MUSL_PREFIX      = File.join(CREW_PREFIX, '/share/musl/')
+CREW_MUSL_PREFIX      = File.join(CREW_PREFIX, '/share/musl')
 CREW_DEST_MUSL_PREFIX = File.join(CREW_DEST_DIR, CREW_MUSL_PREFIX)
 MUSL_LIBC_VERSION     = File.executable?("#{CREW_MUSL_PREFIX}/lib/libc.so") ? `#{CREW_MUSL_PREFIX}/lib/libc.so 2>&1`[/\bVersion\s+\K\S+/] : nil
 
@@ -230,9 +230,7 @@ CREW_MESON_OPTIONS = <<~OPT.chomp
   -Dbuildtype=release \
   -Db_lto=true \
   -Dstrip=true \
-  -Db_pie=true \
-  -Dcpp_args='#{CREW_CORE_FLAGS}' \
-  -Dc_args='#{CREW_CORE_FLAGS}'
+  -Db_pie=true '
 OPT
 
 # Use ninja or samurai
@@ -245,15 +243,10 @@ CREW_NINJA = ENV.fetch('CREW_NINJA', 'ninja')
 CREW_CMAKE_OPTIONS = <<~OPT.chomp
   -DCMAKE_INSTALL_PREFIX=#{CREW_PREFIX} \
   -DCMAKE_LIBRARY_PATH=#{CREW_LIB_PREFIX} \
-  -DCMAKE_C_FLAGS='#{CREW_COMMON_FLAGS.gsub(/-fuse-ld=.{2,4}\s/, '')}' \
-  -DCMAKE_CXX_FLAGS='#{CREW_COMMON_FLAGS.gsub(/-fuse-ld=.{2,4}\s/, '')}' \
-  -DCMAKE_EXE_LINKER_FLAGS='#{CREW_LDFLAGS}' \
-  -DCMAKE_LINKER_TYPE=#{CREW_LINKER.upcase} \
-  -DCMAKE_SHARED_LINKER_FLAGS='#{CREW_LDFLAGS}' \
-  -DCMAKE_MODULE_LINKER_FLAGS='#{CREW_LDFLAGS}' \
   -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE \
   -DCMAKE_BUILD_TYPE=Release
 OPT
+
 CREW_CMAKE_FNO_LTO_OPTIONS = <<~OPT.chomp
   -DCMAKE_INSTALL_PREFIX=#{CREW_PREFIX} \
   -DCMAKE_LIBRARY_PATH=#{CREW_LIB_PREFIX} \
