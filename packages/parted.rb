@@ -1,6 +1,6 @@
-require 'package'
+require 'buildsystems/autotools'
 
-class Parted < Package
+class Parted < Autotools
   description 'Create, destroy, resize, check, copy partitions and file systems.'
   homepage 'https://www.gnu.org/software/parted/'
   version '3.6'
@@ -11,22 +11,13 @@ class Parted < Package
   binary_compression 'tar.zst'
 
   binary_sha256({
-    aarch64: '10b5f4e92420facec657e47fc7a0cd125865be73178438048c64d630e4431f0b',
-     armv7l: '10b5f4e92420facec657e47fc7a0cd125865be73178438048c64d630e4431f0b',
-       i686: 'ba42ce65f733742403ead3a05658ab5305825bec4df89b118f9387a3d82a68cd',
-     x86_64: '9f5c1053aa58626f1d6d3cdad28957c1dbc4e417c1e3d3a3af06160433ddda84'
+    aarch64: '2f0b6d37c1367564f63377968d99a9a9f4c8ab28d90d2e253c275b68013d8b63',
+     armv7l: '2f0b6d37c1367564f63377968d99a9a9f4c8ab28d90d2e253c275b68013d8b63',
+       i686: '9abdc8ef9de5ae67589218be10062e3012c784f305c189f0d984cf8880c430f9',
+     x86_64: '01d8bdaf0944aa74d362c4fd00de3fbf2f0c006e74093afe391e4f99bdbb29ea'
   })
 
   depends_on 'lvm2'
   depends_on 'ncurses'
   depends_on 'readline'
-
-  def self.build
-    system "./configure #{CREW_OPTIONS}"
-    system 'make'
-  end
-
-  def self.install
-    system 'make', "DESTDIR=#{CREW_DEST_DIR}", 'install'
-  end
 end
