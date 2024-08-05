@@ -3,5 +3,5 @@
 /usr/local/bin/f3probe
 /usr/local/bin/f3read
 /usr/local/bin/f3write
-/usr/local/share/man/man1/f3read.1.gz
-/usr/local/share/man/man1/f3write.1.gz
+/usr/local/share/man/man1/f3read.1.zst
+/usr/local/share/man/man1/f3write.1.zst
