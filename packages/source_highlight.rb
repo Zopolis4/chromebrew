@@ -6,7 +6,7 @@ require 'buildsystems/autotools'
 class Source_highlight < Autotools
   description 'Convert source code to syntax highlighted document'
   homepage 'https://www.gnu.org/software/src-highlite/'
-  version '3.1.9-894cacd-boost1.85'
+  version '3.1.9-894cacd'
   license 'GPL'
   compatibility 'all'
   source_url 'https://git.savannah.gnu.org/git/src-highlite.git'
@@ -20,7 +20,7 @@ class Source_highlight < Autotools
      x86_64: '7fbb5ac63a8225cf47824a54965b2faffd7059384fbd1a349fc68135f173b17e'
   })
 
-  depends_on 'boost' # R
+  depends_on 'boost', '== 1.85'
   depends_on 'ctags' # L
   depends_on 'gcc_lib' # R
   depends_on 'glibc' # R
