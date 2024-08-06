@@ -1,43 +1,28 @@
-require 'package'
+require 'buildsystems/cmake'
 
-class Stellarium < Package
+class Stellarium < CMake
   description 'Stellarium is a free open source planetarium for your computer.'
-  homepage 'http://stellarium.org/'
-  version '0.21.1'
+  homepage 'https://stellarium.org/'
+  version '24.2'
   license 'GPL-2.0'
-  compatibility 'x86_64'
-  source_url 'https://github.com/Stellarium/stellarium/releases/download/v0.21.1/stellarium-0.21.1.tar.gz'
-  source_sha256 '072309c6bc48233b39884ae558b23764d0e08eabd96b014b53d780be11a33211'
-  binary_compression 'tar.xz'
+  compatibility 'aarch64 armv7l x86_64'
+  source_url 'https://github.com/Stellarium/stellarium.git'
+  git_hashtag "v#{version}"
+  binary_compression 'tar.zst'
 
   binary_sha256({
-    x86_64: '4618a03c3b1b70a05b4aef9e0aa120b1fb49e8ac5b6511de90e207b6b3cb99e2'
+    aarch64: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+     armv7l: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+     x86_64: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
   })
 
-  depends_on 'qtlocation'
-  depends_on 'qtmultimedia'
-  depends_on 'qtscript'
-  depends_on 'qtserialport'
-  depends_on 'qttools'
-  depends_on 'qtwayland'
-
-  def self.build
-    Dir.mkdir 'builddir'
-    Dir.chdir 'builddir' do
-      system "cmake #{CREW_CMAKE_OPTIONS} -DENABLE_GPS=0 .."
-      system 'make'
-    end
-  end
-
-  def self.install
-    Dir.chdir 'builddir' do
-      system 'make', "LIBDIR=#{CREW_LIB_PREFIX}", "DESTDIR=#{CREW_DEST_DIR}", 'install'
-    end
-  end
-
-  def self.postinstall
-    puts "\nType 'stellarium' to get started.\n".lightblue
-  end
+  depends_on 'qt5_charts'
+  depends_on 'qt5_location'
+  depends_on 'qt5_multimedia'
+  depends_on 'qt5_script'
+  depends_on 'qt5_serialport'
+  depends_on 'qt5_tools'
+  depends_on 'qt5_wayland'
 
   def self.remove
     config_dir = "#{HOME}/.stellarium"
@@ -52,4 +37,6 @@ class Stellarium < Package
       end
     end
   end
+
+  cmake_options '-DENABLE_GPS=0'
 end
