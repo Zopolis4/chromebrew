@@ -3,14 +3,12 @@ require 'package'
 class Smplayer < Package
   description 'SMPlayer is a free media player for Windows and Linux with built-in codecs that can play virtually all video and audio formats.'
   homepage 'https://www.smplayer.info/'
-  version '24.5.0'
+  version '24.5.0.10283'
   license 'GPL-2'
-  compatibility 'x86_64'
-  min_glibc '2.30'
-  source_url "https://github.com/smplayer-dev/smplayer/releases/download/v#{version}/SMPlayer-#{version}-x86_64.AppImage"
-  source_sha256 '85fb5a2322f48a298b7784fc3516e672525593c017ca504310bff05e1330457b'
-
-  no_compile_needed
+  compatibility 'aarch64 armv7l x86_64'
+  source_url 'https://github.com/smplayer-dev/smplayer.git'
+  git_hashtag "v#{version}"
+  binary_compression 'tar.zst'
 
   depends_on 'gdk_base'
   depends_on 'gtk3'
@@ -19,23 +17,11 @@ class Smplayer < Package
   depends_on 'sommelier'
 
   def self.build
-    File.write 'smplayer', <<~EOF
-      #!/bin/bash
-      export LD_LIBRARY_PATH=#{CREW_PREFIX}/share/smplayer/lib:$LD_LIBRARY_PATH
-      cd #{CREW_PREFIX}/share/smplayer
-      bin/smplayer "$@"
-    EOF
+    system 'make', "PREFIX=#{CREW_PREFIX}"
   end
 
   def self.install
-    FileUtils.mkdir_p "#{CREW_DEST_PREFIX}/bin"
-    FileUtils.mkdir_p "#{CREW_DEST_PREFIX}/share/smplayer"
-    FileUtils.mkdir_p "#{CREW_DEST_PREFIX}/share/applications"
-    FileUtils.mkdir_p "#{CREW_DEST_PREFIX}/share/icons/hicolor/512x512/apps"
-    FileUtils.mv Dir['usr/*'], "#{CREW_DEST_PREFIX}/share/smplayer"
-    FileUtils.mv 'smplayer.desktop', "#{CREW_DEST_PREFIX}/share/applications"
-    FileUtils.mv 'smplayer.svg', "#{CREW_DEST_PREFIX}/share/icons/hicolor/512x512/apps"
-    FileUtils.install 'smplayer', "#{CREW_DEST_PREFIX}/bin/smplayer", mode: 0o755
+    system 'make', "PREFIX=#{CREW_PREFIX}", "DESTDIR=#{CREW_DEST_DIR}", 'install'
   end
 
   def self.postinstall
