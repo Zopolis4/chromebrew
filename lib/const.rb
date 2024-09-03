@@ -3,7 +3,7 @@
 require 'etc'
 
 OLD_CREW_VERSION ||= defined?(CREW_VERSION) ? CREW_VERSION : '1.0'
-CREW_VERSION ||= '1.51.7' unless defined?(CREW_VERSION) && CREW_VERSION == OLD_CREW_VERSION
+CREW_VERSION ||= '1.51.8' unless defined?(CREW_VERSION) && CREW_VERSION == OLD_CREW_VERSION
 
 # Kernel architecture.
 KERN_ARCH ||= Etc.uname[:machine]
@@ -345,7 +345,7 @@ CREW_DOCOPT ||= <<~DOCOPT
     crew update [options] [-v|--verbose] [<compatible>]
     crew upgrade [options] [-k|--keep] [-s|--source] [-v|--verbose] [<name> ...]
     crew upload [options] [-v|--verbose] [<name> ...]
-    crew whatprovides [options] <pattern> ...
+    crew whatprovides [options] [--compatible] <pattern> ...
 
     -b --include-build-deps  Include build dependencies in output.
     -t --tree                Print dependencies in a tree-structure format.

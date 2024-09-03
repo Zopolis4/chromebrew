@@ -1801,7 +1801,7 @@ end
 
 def whatprovides_command(args)
   args['<pattern>'].each do |regex|
-    Command.whatprovides(regex)
+    puts Command.whatprovides(regex, args['--compatible'])
   end
 end
 

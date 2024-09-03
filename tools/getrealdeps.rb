@@ -2,15 +2,15 @@
 # getrealdeps version 1.5 (for Chromebrew)
 # Author: Satadru Pramanik (satmandu) satadru at gmail dot com
 require 'fileutils'
+require_relative '../commands/whatprovides'
+require_relative '../lib/color'
+require_relative '../lib/const'
+require_relative '../lib/package'
+require_relative '../lib/package_utils'
 
-crew_local_repo_root = `git rev-parse --show-toplevel 2> /dev/null`.chomp
-# When invoked from crew, pwd is CREW_DEST_DIR, so crew_local_repo_root
-# is empty.
-if crew_local_repo_root.to_s.empty?
-  require_relative '../lib/const'
-else
-  require File.join(crew_local_repo_root, 'lib/const')
-end
+
+# Add >LOCAL< lib to LOAD_PATH so that packages can be loaded
+$LOAD_PATH.unshift File.join(CREW_LIB_PATH, 'lib')
 
 if ARGV.include?('--use-crew-dest-dir')
   ARGV.delete('--use-crew-dest-dir')
@@ -27,13 +27,8 @@ end
 
 # Search for which packages have a needed library in CREW_LIB_PREFIX.
 # This is a subset of what crew whatprovides gives.
-def whatprovidesfxn(pkgdepslcl, pkg)
-  filelcl = if pkgdepslcl.include?(CREW_LIB_PREFIX)
-              `#{@grep} --exclude #{pkg}.filelist --exclude #{pkgfilelist} --exclude={"#{CREW_PREFIX}/etc/crew/meta/*_build.filelist"} "#{pkgdepslcl}$" "#{CREW_PREFIX}"/etc/crew/meta/*.filelist`
-            else
-              `#{@grep} --exclude #{pkg}.filelist --exclude #{pkgfilelist} --exclude={"#{CREW_PREFIX}/etc/crew/meta/*_build.filelist"} "^#{CREW_LIB_PREFIX}.*#{pkgdepslcl}$" "#{CREW_PREFIX}"/etc/crew/meta/*.filelist`
-            end
-  filelcl.gsub(/.filelist.*/, '').gsub(%r{.*/}, '').split("\n").uniq.join("\n").gsub(':', '')
+def whatprovidesfxn(pkgdepslcl)
+  return Command.whatprovides("#{CREW_LIB_PREFIX}/#{pkgdepslcl}", true).to_s.lines.flat_map {|element| element.gsub(/\e\[\d+m/, '').sub(/:.*/, '').chomp! }.uniq
 end
 
 def main(pkg)
@@ -51,18 +46,6 @@ def main(pkg)
     end
     abort("Package #{pkg} either does not exist or does not contain any libraries.") unless File.exist?(pkgfilelist)
   end
-
-  # Speed up grep.
-  ENV['LC_ALL'] = 'C'
-
-  # Install grep if a functional local copy does not exist.
-  if system('grep --version > /dev/null 2>&1')
-    @grep = 'grep'
-  else
-    system('crew install grep')
-    @grep = "#{CREW_PREFIX}/bin/grep"
-  end
-
   # Gawk is needed for adding dependencies.
   unless system('gawk -W version > /dev/null 2>&1')
     puts "\nThe inplace replacement functionality of gawk is used to add missing dependencies to package files."
@@ -70,9 +53,10 @@ def main(pkg)
   end
 
   # upx is needed to expand compressed binaries to check for dependencies.
-  unless system('upx --version > /dev/null 2>&1')
-    puts "\nUpx is needed to expand compressed binaries."
-    system('crew install upx')
+  unless PackageUtils.installed?('upx')
+    puts "upx is not installed.".lightred
+    puts "Please run 'crew install upx'".orange
+    return
   end
 
   # What files does the package provide.
@@ -92,20 +76,19 @@ def main(pkg)
   pkgdepsfiles = pkgfiles.map do |i|
     system("upx -d #{i} > /dev/null 2>&1")
     FileUtils.mkdir_p("/tmp/deps/#{pkg}/")
-    `readelf -d "#{i}" 2>/dev/null | #{@grep} NEEDED | awk '{print $5}' | sed 's/\\[//g' | sed 's/\\]//g' | awk '!x[$0]++' | tee /tmp/deps/#{pkg}/#{File.basename(i)}`
+    `readelf -d "#{i}" 2>/dev/null | grep NEEDED | awk '{print $5}' | sed 's/\\[//g' | sed 's/\\]//g' | awk '!x[$0]++' | tee /tmp/deps/#{pkg}/#{File.basename(i)}`
   end
   pkgdepsfiles = pkgdepsfiles.map do |filedeps|
     filedeps.split("\n")
   end.flatten.compact.uniq
 
   # Figure out which Chromebrew packages provide the relevant deps.
-  pkgdeps = pkgdepsfiles.map do |file|
-              whatprovidesfxn(file, pkg)
-            end.sort.reject { |i| i.include?(pkg) }.map { |i| i.split("\n") }.flatten.uniq
+  pkgdeps = pkgdepsfiles.flat_map { |file| whatprovidesfxn(file) }.sort
+  puts pkgdeps
 
   # Massage the glibc entries in the dependency list.
-  pkgdeps = pkgdeps.map { |i| i.gsub(/glibc_build.*/, 'glibc') }.uniq
-  pkgdeps = pkgdeps.map { |i| i.gsub(/glibc_lib.*/, 'glibc_lib') }.uniq.map(&:strip).reject(&:empty?)
+  pkgdeps = pkgdeps.map { |i| i.sub(/glibc_build.*/, 'glibc') }.uniq
+  pkgdeps = pkgdeps.map { |i| i.sub(/glibc_lib.*/, 'glibc_lib') }.uniq.compact
 
   # Look for missing runtime dependencies.
   missingpkgdeps = pkgdeps.reject { |i| File.read("#{CREW_PREFIX}/lib/crew/packages/#{pkg}.rb").include?("depends_on '#{i}'") unless File.read("#{CREW_PREFIX}/lib/crew/packages/#{pkg}.rb").include?("depends_on '#{i}' => :build") }
