@@ -1,12 +1,9 @@
-# Adapted from Arch Linux wireshark PKGBUILD at:
-# https://github.com/archlinux/svntogit-community/raw/packages/wireshark/trunk/PKGBUILD
-
 require 'buildsystems/cmake'
 
 class Wireshark < CMake
   description 'Network traffic and protocol analyzer/sniffer'
   homepage 'https://www.wireshark.org/'
-  version '4.2.3'
+  version '4.4.0'
   license 'GPL-2'
   compatibility 'all'
   source_url 'https://github.com/wireshark/wireshark.git'
