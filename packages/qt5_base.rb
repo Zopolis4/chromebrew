@@ -3,10 +3,9 @@ require 'package'
 class Qt5_base < Package
   description 'Qt Base (Core, Gui, Widgets, Network, ...)'
   homepage 'https://code.qt.io/cgit/qt/qtbase'
-  version 'kde-5.15.14-9f9a56d-icu75.1'
+  version 'kde-5.15.14-9f9a56d'
   license 'GPL-2'
   compatibility 'x86_64 aarch64 armv7l'
-  min_glibc '2.37'
   source_url 'https://invent.kde.org/qt/qt/qtbase.git'
   git_hashtag '9f9a56d750caff8b4459e7e9bf82f1f4d725f72f'
   binary_compression 'tar.zst'
@@ -35,7 +34,7 @@ class Qt5_base < Package
   depends_on 'gstreamer' => :build
   depends_on 'gtk3' # R
   depends_on 'harfbuzz' # R
-  depends_on 'icu4c' # R
+  depends_on 'icu4c', '== 75.1'
   depends_on 'jsoncpp' => :build
   depends_on 'krb5' # R
   depends_on 'lcms' => :build
