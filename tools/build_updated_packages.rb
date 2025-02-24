@@ -46,10 +46,10 @@ def self.check_build_uploads(architectures_to_check = nil, name = nil)
   architectures_to_check.each do |arch|
     arch_specific_url = "#{CREW_GITLAB_PKG_REPO}/generic/#{name}/#{@pkg_obj.version}_#{arch}/#{name}-#{@pkg_obj.version}-chromeos-#{arch}.#{@pkg_obj.binary_compression}"
     puts "Checking: curl -sI #{arch_specific_url}" if CREW_VERBOSE
-    if `curl -sI #{arch_specific_url}`.lines.first.split[1] == '200'
-      builds_needed.delete(arch)
-      puts "#{arch_specific_url} found!" if CREW_VERBOSE
-    end
+    # if `curl -sI #{arch_specific_url}`.lines.first.split[1] == '200'
+    #   builds_needed.delete(arch)
+    #   puts "#{arch_specific_url} found!" if CREW_VERBOSE
+    # end
     puts "builds_needed for #{name} is now #{builds_needed}" if CREW_VERBOSE
   end
   return builds_needed
