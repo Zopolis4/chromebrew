@@ -6775,6 +6775,11 @@ url: https://github.com/KhronosGroup/OpenCL-ICD-Loader/releases
 activity: medium
 ---
 kind: url
+name: opencolorio
+url: https://github.com/AcademySoftwareFoundation/OpenColorIO/releases
+activity: medium
+---
+kind: url
 name: openconnect
 url: ftp://ftp.infradead.org/pub/openconnect/
 activity: none
