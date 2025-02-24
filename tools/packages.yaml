@@ -6903,6 +6903,11 @@ kind: url
 name: opencode
 url: https://github.com/sst/opencode/releases
 activity: high
+--
+kind: url
+name: opencolorio
+url: https://github.com/AcademySoftwareFoundation/OpenColorIO/releases
+activity: medium
 ---
 kind: url
 name: openconnect
